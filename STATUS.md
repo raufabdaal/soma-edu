@@ -39,9 +39,21 @@
 - [ ] **Resend (Email)**: Currently using a placeholder. Weekly reports will fail until a real key is provided.
 - [x] **Internal Secrets**: Set to default secure values.
 
-### **How to find missing keys:**
-1. **Gemini API Key**: Go to [aistudio.google.com](https://aistudio.google.com/app/apikey) and click "Create API key".
-2. **Resend API Key**: Go to [resend.com](https://resend.com/), create an account, and get your API key from the dashboard.
+### **How to fix Common Errors:**
+
+#### **1. "Missing or insufficient permissions"**
+This happens when Firestore security rules are either not applied or are too strict.
+- **Fix:** Go to **Firebase Console** -> **Firestore Database** -> **Rules**.
+- **Action:** Delete everything there and paste the contents of the `firestore.rules` file in this project. Click **Publish**.
+
+#### **2. "auth/unauthorized-domain"**
+Firebase only allows logins from domains it trusts.
+- **Fix:** Go to **Firebase Console** -> **Authentication** -> **Settings** -> **Authorized Domains**.
+- **Action:** Ensure both `localhost` AND `soma-edu.vercel.app` are in the list.
+
+#### **3. Finding Missing Keys**
+- **Gemini API Key:** Go to [aistudio.google.com](https://aistudio.google.com/app/apikey) and click "Create API key".
+- **Resend API Key:** Go to [resend.com](https://resend.com/), create an account, and get your API key from the dashboard.
 
 ---
 
