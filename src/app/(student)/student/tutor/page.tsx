@@ -24,7 +24,7 @@ export default function AiTutor() {
   const handleSend = async () => {
     if (!input.trim() || !user) return;
 
-    const userMessage = { role: "user", content: input };
+    const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
