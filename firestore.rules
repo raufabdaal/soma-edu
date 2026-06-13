@@ -1,0 +1,80 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasRole(role) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // Students collection
+    match /students/{studentId} {
+      allow read: if isOwner(studentId) || (isAuthenticated() && request.auth.uid in resource.data.parentIds);
+      allow write: if isOwner(studentId);
+    }
+
+    // Parents collection
+    match /parents/{parentId} {
+      allow read: if isOwner(parentId);
+      allow write: if isOwner(parentId);
+    }
+
+    // Progress subcollections under students
+    match /students/{studentId}/progress/{document=**} {
+      allow read: if isOwner(studentId) || (isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/students/$(studentId)).data.parentIds);
+      allow write: if isOwner(studentId);
+    }
+
+    // Content collections (Read only for authenticated users)
+    match /subjects/{subjectId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Admin only via console for now
+    }
+
+    match /topics/{topicId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /lessons/{lessonId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /questions/{questionId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /markingSchemes/{subjectId}/topics/{topicId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // Reports
+    match /weeklyReports/{reportId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.studentId || request.auth.uid in get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.parentIds);
+      allow write: if false; // System only
+    }
+
+    // Payments
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.studentId);
+      allow write: if false;
+    }
+  }
+}

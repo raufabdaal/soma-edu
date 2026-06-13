@@ -60,9 +60,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // We set userProfile to null, but don't error out.
             setUserProfile(null);
           }
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
-          setUserProfile(null);
+        } catch (error: any) {
+          // If it's a permission error, it likely means the profile doesn't exist yet
+          // or rules are still propagating. We'll set to null and let the UI handle it.
+          if (error.code === 'permission-denied') {
+            setUserProfile(null);
+          } else {
+            console.error("Error fetching user profile:", error);
+            setUserProfile(null);
+          }
         }
       } else {
         setUserProfile(null);

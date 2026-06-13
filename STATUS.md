@@ -33,7 +33,8 @@
 
 ## 🛠️ Configuration Status
 
-- [x] **Firebase**: Fully pre-configured in `src/lib/firebase/config.ts`. The login page should now work immediately.
+- [x] **Firebase Config**: Fully pre-configured in `src/lib/firebase/config.ts`.
+- [ ] **Firestore Rules**: **Manual Action Required.** Copy the contents of `firestore.rules` and paste them into the "Rules" tab of your Cloud Firestore in the Firebase Console to fix the "Missing permissions" error.
 - [!] **Gemini API**: Configured with provided "google api key". *Note: If AI features fail, verify this key at [Google AI Studio](https://aistudio.google.com/app/apikey).*
 - [ ] **Resend (Email)**: Currently using a placeholder. Weekly reports will fail until a real key is provided.
 - [x] **Internal Secrets**: Set to default secure values.
