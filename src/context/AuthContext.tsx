@@ -152,6 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
+      // Add custom parameters to prompt for account selection every time
+      provider.setCustomParameters({ prompt: 'select_account' });
+
       const credential = await signInWithPopup(auth, provider);
       const firebaseUser = credential.user;
 
