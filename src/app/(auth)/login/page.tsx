@@ -106,28 +106,26 @@ export default function LoginPage() {
 
   if (loading || (user && userProfile)) {
     return (
-      <div className="full-screen-loader">
-        <div className="spinner"></div>
-        <p style={{ marginTop: "1rem", color: "var(--text-muted)", fontWeight: 500 }}>
-          Authenticating...
-        </p>
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background z-50">
+        <div className="w-10 h-10 border-4 border-muted border-l-primary rounded-full animate-spin"></div>
+        <p className="mt-4 text-muted-foreground font-medium">Authenticating...</p>
       </div>
     );
   }
 
   return (
-    <div className="container auth-container animate-fade-in">
-      <div className="auth-card glass-panel">
-        <div className="auth-header">
-          <h1 className="auth-title">SomaEdu Portal</h1>
-          <p className="auth-subtitle">
+    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
+      <div className="w-full max-w-md bg-card border shadow-sm rounded-xl p-8 animate-in fade-in zoom-in-95 duration-300">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">SomaEdu Portal</h1>
+          <p className="text-sm text-muted-foreground mt-2">
             {isSignUp ? "Create a portal account to get started" : "Sign in to access your dashboard"}
           </p>
         </div>
 
         {error && (
-          <div className="alert alert-danger">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none">
+          <div className="bg-destructive/15 text-destructive border border-destructive/20 rounded-md p-3 mb-6 text-sm font-medium flex items-center gap-2">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -137,8 +135,8 @@ export default function LoginPage() {
         )}
 
         {success && (
-          <div className="alert alert-success">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none">
+          <div className="bg-green-100 text-green-800 border border-green-200 rounded-md p-3 mb-6 text-sm font-medium flex items-center gap-2">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
@@ -146,43 +144,51 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Role Selector (visible during sign-up, or before Google Sign-In) */}
-        <div className="form-group" style={{ marginBottom: "1.5rem" }}>
-          <label className="form-label">Select Your Role {!isSignUp && "(for Google Registration)"}</label>
-          <div className="role-selector">
-            <input
-              type="radio"
-              id="role-student"
-              name="role"
-              className="role-option"
-              checked={role === "student"}
-              onChange={() => setRole("student")}
-              disabled={submitting}
-            />
-            <label htmlFor="role-student" className="role-label">Student</label>
-
-            <input
-              type="radio"
-              id="role-parent"
-              name="role"
-              className="role-option"
-              checked={role === "parent"}
-              onChange={() => setRole("parent")}
-              disabled={submitting}
-            />
-            <label htmlFor="role-parent" className="role-label">Parent</label>
+        <div className="space-y-4 mb-6">
+          <label className="text-sm font-medium text-foreground">
+            Select Your Role {!isSignUp && <span className="text-muted-foreground font-normal">(for Google Registration)</span>}
+          </label>
+          <div className="grid grid-cols-2 gap-2 bg-muted p-1 rounded-lg border">
+            <div>
+              <input
+                type="radio"
+                id="role-student"
+                name="role"
+                className="peer sr-only"
+                checked={role === "student"}
+                onChange={() => setRole("student")}
+                disabled={submitting}
+              />
+              <label htmlFor="role-student" className="flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors text-muted-foreground peer-checked:bg-background peer-checked:text-foreground peer-checked:shadow-sm">
+                Student
+              </label>
+            </div>
+            <div>
+              <input
+                type="radio"
+                id="role-parent"
+                name="role"
+                className="peer sr-only"
+                checked={role === "parent"}
+                onChange={() => setRole("parent")}
+                disabled={submitting}
+              />
+              <label htmlFor="role-parent" className="flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors text-muted-foreground peer-checked:bg-background peer-checked:text-foreground peer-checked:shadow-sm">
+                Parent
+              </label>
+            </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && (
-            <div className="form-group">
-              <label className="form-label" htmlFor="name">Full Name</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="name">Full Name</label>
               <input
                 id="name"
                 type="text"
                 placeholder="Enter your name"
-                className="form-input"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 disabled={submitting}
@@ -191,13 +197,13 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">Email Address</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="email">Email Address</label>
             <input
               id="email"
               type="email"
               placeholder="name@example.com"
-              className="form-input"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={submitting}
@@ -205,13 +211,13 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="password">Password</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
               placeholder="••••••••"
-              className="form-input"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={submitting}
@@ -219,10 +225,10 @@ export default function LoginPage() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: "100%", marginTop: "0.5rem" }} disabled={submitting}>
+          <button type="submit" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full mt-2" disabled={submitting}>
             {submitting ? (
-              <span className="flex-center" style={{ gap: "0.5rem" }}>
-                <span className="spinner" style={{ width: "18px", height: "18px", borderWidth: "2px" }}></span>
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-l-primary-foreground rounded-full animate-spin"></div>
                 Processing...
               </span>
             ) : isSignUp ? (
@@ -233,12 +239,18 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="divider">or continue with</div>
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+          </div>
+        </div>
 
         <button
           type="button"
-          className="btn btn-google"
-          style={{ width: "100%", gap: "0.75rem" }}
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full gap-2"
           onClick={handleGoogleSignIn}
           disabled={submitting}
         >
@@ -251,9 +263,9 @@ export default function LoginPage() {
           Google Sign In
         </button>
 
-        <div className="auth-toggle">
+        <div className="mt-6 text-center text-sm text-muted-foreground">
           {isSignUp ? "Already have an account?" : "Don't have an account?"}
-          <button type="button" className="auth-toggle-btn" onClick={toggleMode} disabled={submitting}>
+          <button type="button" className="ml-1 font-semibold text-primary hover:underline" onClick={toggleMode} disabled={submitting}>
             {isSignUp ? "Sign In" : "Sign Up"}
           </button>
         </div>

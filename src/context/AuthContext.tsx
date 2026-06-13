@@ -20,6 +20,9 @@ export interface UserProfile {
   email: string;
   role: "student" | "parent";
   displayName?: string;
+  phone?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface AuthContextType {
@@ -105,9 +108,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         role,
         displayName,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       await setDoc(doc(db, "users", credential.user.uid), newProfile);
+
+      if (role === "student") {
+        const studyCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        await setDoc(doc(db, "students", credential.user.uid), {
+          userId: credential.user.uid,
+          parentIds: [],
+          level: "S3", // Default level
+          enrolledSubjects: [],
+          studyCode,
+          subscriptionStatus: "trial",
+          trialStartDate: new Date(),
+          subscriptionExpiry: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          diagnosticCompleted: false,
+          diagnosticScores: {},
+          predictedGrades: {},
+        });
+      } else if (role === "parent") {
+        await setDoc(doc(db, "parents", credential.user.uid), {
+          userId: credential.user.uid,
+          studentIds: [],
+          phone: "",
+          whatsappOptIn: false,
+          emailReportsOptIn: true,
+        });
+      }
+
       setUserProfile(newProfile);
       return credential;
     } catch (error) {
@@ -134,8 +165,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: firebaseUser.email || "",
           role: roleForNewUser,
           displayName: firebaseUser.displayName || "",
+          createdAt: new Date(),
+          updatedAt: new Date(),
         };
         await setDoc(docRef, newProfile);
+
+        if (roleForNewUser === "student") {
+          const studyCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+          await setDoc(doc(db, "students", firebaseUser.uid), {
+            userId: firebaseUser.uid,
+            parentIds: [],
+            level: "S3",
+            enrolledSubjects: [],
+            studyCode,
+            subscriptionStatus: "trial",
+            trialStartDate: new Date(),
+            subscriptionExpiry: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            diagnosticCompleted: false,
+            diagnosticScores: {},
+            predictedGrades: {},
+          });
+        } else if (roleForNewUser === "parent") {
+          await setDoc(doc(db, "parents", firebaseUser.uid), {
+            userId: firebaseUser.uid,
+            studentIds: [],
+            phone: "",
+            whatsappOptIn: false,
+            emailReportsOptIn: true,
+          });
+        }
+
         setUserProfile(newProfile);
       } else {
         setUserProfile(docSnap.data() as UserProfile);
