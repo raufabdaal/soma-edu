@@ -8,8 +8,8 @@ import Link from "next/link";
 
 export default function StudentDashboard() {
   const { user, userProfile } = useAuth();
-  const [studentData, setStudentData] = useState<any>(null);
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [studentData, setStudentData] = useState<Record<string, any> | null>(null);
+  const [subjects, setSubjects] = useState<Record<string, any>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
