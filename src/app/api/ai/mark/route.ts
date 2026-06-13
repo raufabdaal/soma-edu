@@ -43,8 +43,17 @@ export async function POST(req: NextRequest) {
       .replace("{{STUDENT_ANSWER}}", studentAnswer);
 
     const aiResponse = await getGeminiResponse(studentAnswer, prompt);
-    const cleanJson = aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-    const result = JSON.parse(cleanJson);
+
+    // Robustly parse the JSON response from Gemini
+    let result;
+    try {
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      const cleanJson = jsonMatch ? jsonMatch[0] : aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+      result = JSON.parse(cleanJson);
+    } catch (_parseError) {
+      console.error("Gemini JSON Parse Error:", aiResponse);
+      throw new Error("Failed to parse AI response as JSON");
+    }
 
     const progressRef = doc(db, "students", studentId, "progress", "questions", "submissions", questionId);
     await setDoc(progressRef, {
@@ -54,8 +63,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("AI Marking Error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
