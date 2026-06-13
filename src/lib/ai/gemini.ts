@@ -21,7 +21,7 @@ export const getGeminiResponse = async (prompt: string, systemInstruction?: stri
     return response.text();
   } catch (error) {
     console.error("Gemini AI API Error:", error);
-    if (error.message?.includes("API_KEY_INVALID")) {
+    if (error instanceof Error && error.message?.includes("API_KEY_INVALID")) {
       throw new Error("Invalid Gemini API Key. Please verify it in Google AI Studio.");
     }
     throw error;
