@@ -51,7 +51,7 @@ export default function LessonPage() {
     fetchLesson();
   }, [lessonId, subjectId, topicId]);
 
-  const handleComplete = async (score: number, answers: any[]) => {
+  const handleComplete = async (score: number, answers: unknown[]) => {
     const durationSeconds = Math.round((Date.now() - startTime) / 1000);
     await trackLessonProgress(
       lessonId as string,

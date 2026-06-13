@@ -60,11 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log("No Profile Found for UID:", firebaseUser.uid);
             setUserProfile(null);
           }
-        } catch (error: any) {
-          console.error("Firestore Profile Fetch Error:", error.code, error.message);
+        } catch (error) {
+          console.error("Firestore Profile Fetch Error:", error);
           // If it's a permission error, it likely means the profile doesn't exist yet
           // or rules are still propagating. We'll set to null and let the UI handle it.
-          if (error.code === 'permission-denied' || error.message?.includes('permission')) {
+          const err = error as { code?: string; message?: string };
+          if (err.code === 'permission-denied' || err.message?.includes('permission')) {
             console.warn("Permission denied for profile fetch - might be a new user.");
             setUserProfile(null);
           } else {

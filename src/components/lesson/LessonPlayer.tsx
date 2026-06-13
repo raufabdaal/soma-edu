@@ -8,12 +8,12 @@ import { WorkedExampleBlock } from "./WorkedExampleBlock";
 
 interface LessonPlayerProps {
   lesson: Lesson;
-  onComplete: (score: number, answers: any[]) => void;
+  onComplete: (score: number, answers: unknown[]) => void;
 }
 
 export function LessonPlayer({ lesson, onComplete }: LessonPlayerProps) {
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
-  const [answers, setAnswers] = useState<any[]>([]);
+  const [answers, setAnswers] = useState<unknown[]>([]);
   const [scores, setScores] = useState<number[]>([]);
 
   const handleNext = () => {
@@ -27,7 +27,7 @@ export function LessonPlayer({ lesson, onComplete }: LessonPlayerProps) {
     }
   };
 
-  const handleQuestionAnswer = (correct: boolean, answer: any) => {
+  const handleQuestionAnswer = (correct: boolean, answer: unknown) => {
     setAnswers([...answers, answer]);
     setScores([...scores, correct ? 1 : 0]);
   };

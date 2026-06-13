@@ -50,8 +50,8 @@ export async function POST(req: NextRequest) {
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       const cleanJson = jsonMatch ? jsonMatch[0] : aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
       result = JSON.parse(cleanJson);
-    } catch (_parseError) {
-      console.error("Gemini JSON Parse Error:", aiResponse);
+    } catch (parseError) {
+      console.error("Gemini JSON Parse Error:", aiResponse, parseError);
       throw new Error("Failed to parse AI response as JSON");
     }
 
