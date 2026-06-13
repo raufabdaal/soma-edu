@@ -57,7 +57,7 @@ export default function PastPaperPractice() {
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="Type your answer here..."
             className="w-full h-48 p-4 rounded-xl border focus:ring-2 focus:ring-primary outline-none bg-background resize-none"
-            disabled={loading || feedback}
+            disabled={loading || !!feedback}
           />
 
           {!feedback && (
