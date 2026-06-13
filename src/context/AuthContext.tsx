@@ -47,22 +47,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
+        console.log("Auth State Changed: User Logged In", firebaseUser.uid);
         try {
           // Fetch user profile from Firestore
           const docRef = doc(db, "users", firebaseUser.uid);
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
+            console.log("Profile Found:", docSnap.data());
             setUserProfile(docSnap.data() as UserProfile);
           } else {
-            // Document might not exist if they did Google Auth and we haven't written it yet,
-            // or if they registered but the document write failed.
-            // We set userProfile to null, but don't error out.
+            console.log("No Profile Found for UID:", firebaseUser.uid);
             setUserProfile(null);
           }
         } catch (error) {
-          console.error("Error fetching user profile:", error);
-          setUserProfile(null);
+          console.error("Firestore Profile Fetch Error:", error);
+          // If it's a permission error, it likely means the profile doesn't exist yet
+          // or rules are still propagating. We'll set to null and let the UI handle it.
+          const err = error as { code?: string; message?: string };
+          if (err.code === 'permission-denied' || err.message?.includes('permission')) {
+            console.warn("Permission denied for profile fetch - might be a new user.");
+            setUserProfile(null);
+          } else {
+            setUserProfile(null);
+          }
         }
       } else {
         setUserProfile(null);

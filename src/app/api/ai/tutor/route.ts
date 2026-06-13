@@ -33,7 +33,13 @@ export async function POST(req: NextRequest) {
       ? `${JSON.stringify(conversationHistory)}\n\nUser: ${message}`
       : message;
 
-    const reply = await getGeminiResponse(fullPrompt, systemPrompt);
+    let reply;
+    try {
+      reply = await getGeminiResponse(fullPrompt, systemPrompt);
+    } catch (apiError) {
+      console.error("Gemini API Error:", apiError);
+      reply = "I'm having a bit of trouble connecting to my knowledge base right now. Please try again in a moment!";
+    }
 
     return NextResponse.json({ reply });
   } catch (error: unknown) {

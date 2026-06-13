@@ -12,7 +12,7 @@ export function useStudentProgress() {
     topicId: string,
     subjectId: string,
     score: number,
-    answers: any[],
+    answers: unknown[],
     timeSpentSeconds: number
   ) => {
     if (!user) return;

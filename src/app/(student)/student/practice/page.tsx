@@ -3,11 +3,22 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
+interface Feedback {
+  grade: string;
+  score: number;
+  outOf: number;
+  percentage: number;
+  feedback: string;
+  keyPointsEarned: string[];
+  keyPointsMissed: string[];
+  improvedAnswer: string;
+}
+
 export default function PastPaperPractice() {
   const { user } = useAuth();
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState<any>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   const handleSubmit = async () => {
     if (!answer || !user) return;
@@ -46,7 +57,7 @@ export default function PastPaperPractice() {
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="Type your answer here..."
             className="w-full h-48 p-4 rounded-xl border focus:ring-2 focus:ring-primary outline-none bg-background resize-none"
-            disabled={loading || feedback}
+            disabled={loading || !!feedback}
           />
 
           {!feedback && (

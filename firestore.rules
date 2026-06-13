@@ -1,0 +1,45 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allows any authenticated user to read and write their own documents
+    // This is a simplified, more resilient version for initial onboarding
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow read for initial check if profile exists
+      allow read: if request.auth != null;
+    }
+
+    match /students/{studentId} {
+      allow read, write: if request.auth != null && request.auth.uid == studentId;
+      // Allow parent reading (if parentIds field exists)
+      allow read: if request.auth != null && (request.auth.uid in resource.data.parentIds);
+    }
+
+    match /parents/{parentId} {
+      allow read, write: if request.auth != null && request.auth.uid == parentId;
+    }
+
+    // Allow all authenticated users to read content
+    match /subjects/{document=**} { allow read: if request.auth != null; }
+    match /topics/{document=**} { allow read: if request.auth != null; }
+    match /lessons/{document=**} { allow read: if request.auth != null; }
+    match /questions/{document=**} { allow read: if request.auth != null; }
+    match /markingSchemes/{document=**} { allow read: if request.auth != null; }
+
+    // Progress data
+    match /students/{studentId}/progress/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == studentId;
+    }
+
+    // Reports and Payments
+    match /weeklyReports/{reportId} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.studentId || request.auth.uid in get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.parentIds);
+    }
+
+    match /payments/{paymentId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.studentId;
+    }
+  }
+}

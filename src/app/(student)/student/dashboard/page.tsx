@@ -5,11 +5,21 @@ import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import Link from "next/link";
+import { Student } from "@/types";
+
+interface SubjectWithProgress {
+  id: string;
+  name: string;
+  code: string;
+  progress: number;
+  grade: string;
+  color: string;
+}
 
 export default function StudentDashboard() {
   const { user, userProfile } = useAuth();
-  const [studentData, setStudentData] = useState<Record<string, any> | null>(null);
-  const [subjects, setSubjects] = useState<Record<string, any>[]>([]);
+  const [studentData, setStudentData] = useState<Student | null>(null);
+  const [subjects, setSubjects] = useState<SubjectWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,17 +29,46 @@ export default function StudentDashboard() {
         // Fetch student profile
         const studentRef = doc(db, "students", user.uid);
         const studentSnap = await getDoc(studentRef);
+        let studentProfileData = null;
         if (studentSnap.exists()) {
-          setStudentData(studentSnap.data());
+          studentProfileData = studentSnap.data() as Student;
+          setStudentData(studentProfileData);
         }
 
-        // Fetch enrolled subjects
-        // In Phase 1, we'll use mock subjects if none are enrolled
-        const subjectsData = [
-          { id: 'math_s3', name: 'Mathematics', code: 'S3', progress: 65, grade: 'B', color: '#2563EB' },
-          { id: 'biology_s3', name: 'Biology', code: 'S3', progress: 42, grade: 'C', color: '#16A34A' },
-          { id: 'chemistry_s3', name: 'Chemistry', code: 'S3', progress: 12, grade: 'D', color: '#7C3AED' },
-        ];
+        // Fetch enrolled subjects metadata
+        const enrolledIds = studentProfileData?.enrolledSubjects || ['math_s3', 'biology_s3', 'chemistry_s3'];
+
+        const subjectsData = await Promise.all(enrolledIds.map(async (id: string) => {
+          const subjectRef = doc(db, "subjects", id);
+          const subjectSnap = await getDoc(subjectRef);
+
+          let subjectInfo = {
+            id,
+            name: id.split('_')[0].charAt(0).toUpperCase() + id.split('_')[0].slice(1),
+            code: id.split('_')[1].toUpperCase(),
+            color: id.includes('math') ? '#2563EB' : id.includes('bio') ? '#16A34A' : '#7C3AED'
+          };
+
+          if (subjectSnap.exists()) {
+            const data = subjectSnap.data();
+            subjectInfo = { ...subjectInfo, name: data.name, code: data.level, color: data.accentColor };
+          }
+
+          // Fetch progress for this subject
+          const progressRef = doc(db, "students", user.uid, "progress_subjects", id);
+          const progressSnap = await getDoc(progressRef);
+
+          let progressData = { progress: 0, grade: studentProfileData?.predictedGrades?.[id] || 'N/A' };
+          if (progressSnap.exists()) {
+            const data = progressSnap.data();
+            progressData = {
+              progress: data.guaranteeProgress || 0,
+              grade: data.predictedGrade || 'N/A'
+            };
+          }
+
+          return { ...subjectInfo, ...progressData };
+        }));
 
         setSubjects(subjectsData);
       } catch (error) {
@@ -48,7 +87,7 @@ export default function StudentDashboard() {
 
   const studentName = userProfile?.displayName?.split(" ")[0] || "Student";
   const overallGrade = "B"; // Simplified for MVP
-  const guaranteeProgress = studentData?.guaranteeProgress || 45;
+  const guaranteeProgress = studentData ? 45 : 0; // TODO: Calculate this from studentData
 
   return (
     <div className="container mx-auto p-4 md:p-8 animate-premium-slide">

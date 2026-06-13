@@ -32,21 +32,29 @@ const MOCK_DIAGNOSTIC_QUESTIONS: Question[] = [
     topic: "Mathematics - Algebra",
     difficulty: "easy",
   },
-  ...Array.from({ length: 18 }).map((_, i) => ({
-    id: `q${i + 3}`,
-    text: `Diagnostic Question ${i + 3} for testing adaptive logic. Select option A.`,
-    options: ["Option A", "Option B", "Option C", "Option D"],
-    correctIndex: 0,
-    topic: "General Science",
-    difficulty: (i % 3 === 0 ? "easy" : i % 3 === 1 ? "medium" : "hard") as any,
-  }))
+  ...Array.from({ length: 38 }).map((_, i) => {
+    const topics = ["Biology - Cells", "Chemistry - Acids", "Mathematics - Geometry", "Physics - Force"];
+    const topic = topics[i % topics.length];
+    const difficulty = (i < 10 ? "easy" : i < 25 ? "medium" : "hard") as "easy" | "medium" | "hard";
+    return {
+      id: `q${i + 3}`,
+      text: `${difficulty.toUpperCase()} Question on ${topic} (${i + 3}). Select option A.`,
+      options: ["Option A", "Option B", "Option C", "Option D"],
+      correctIndex: 0,
+      topic,
+      difficulty,
+    };
+  })
 ];
+
+const TOTAL_QUESTIONS_TO_ANSWER = 20;
 
 export default function DiagnosticTest() {
   const router = useRouter();
   const { user, userProfile } = useAuth();
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState<Question>(MOCK_DIAGNOSTIC_QUESTIONS[0]);
+  const [questionsAnswered, setQuestionsAnswered] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [isCompleted, setIsCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -58,12 +66,42 @@ export default function DiagnosticTest() {
   }, [userProfile, router]);
 
   const handleAnswer = (optionIndex: number) => {
-    const question = MOCK_DIAGNOSTIC_QUESTIONS[currentQuestionIndex];
-    const newAnswers = { ...answers, [question.id]: optionIndex };
+    const isCorrect = optionIndex === currentQuestion.correctIndex;
+    const newAnswers = { ...answers, [currentQuestion.id]: optionIndex };
     setAnswers(newAnswers);
 
-    if (currentQuestionIndex < MOCK_DIAGNOSTIC_QUESTIONS.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    const nextQuestionsAnswered = questionsAnswered + 1;
+    setQuestionsAnswered(nextQuestionsAnswered);
+
+    if (nextQuestionsAnswered >= TOTAL_QUESTIONS_TO_ANSWER) {
+      setIsCompleted(true);
+      return;
+    }
+
+    // Adaptive logic:
+    // If correct, find a harder question. If incorrect, find an easier one.
+    const currentDifficulty = currentQuestion.difficulty;
+    let targetDifficulty: "easy" | "medium" | "hard" = currentDifficulty;
+
+    if (isCorrect) {
+      if (currentDifficulty === "easy") targetDifficulty = "medium";
+      else if (currentDifficulty === "medium") targetDifficulty = "hard";
+    } else {
+      if (currentDifficulty === "hard") targetDifficulty = "medium";
+      else if (currentDifficulty === "medium") targetDifficulty = "easy";
+    }
+
+    const answeredIds = Object.keys(newAnswers);
+    const availableQuestions = MOCK_DIAGNOSTIC_QUESTIONS.filter(q => !answeredIds.includes(q.id));
+
+    let nextQ = availableQuestions.find(q => q.difficulty === targetDifficulty);
+    if (!nextQ) {
+      // Fallback if no question of target difficulty is available
+      nextQ = availableQuestions[0];
+    }
+
+    if (nextQ) {
+      setCurrentQuestion(nextQ);
     } else {
       setIsCompleted(true);
     }
@@ -74,14 +112,24 @@ export default function DiagnosticTest() {
     setSaving(true);
 
     try {
+      let score = 0;
+      const answeredQuestions = MOCK_DIAGNOSTIC_QUESTIONS.filter(q => Object.keys(answers).includes(q.id));
+
       let correctCount = 0;
-      MOCK_DIAGNOSTIC_QUESTIONS.forEach((q) => {
+      answeredQuestions.forEach((q) => {
         if (answers[q.id] === q.correctIndex) {
-          correctCount++;
+          // Weight score by difficulty
+          const weight = q.difficulty === "hard" ? 3 : q.difficulty === "medium" ? 2 : 1;
+          correctCount += weight;
         }
       });
 
-      const score = Math.round((correctCount / MOCK_DIAGNOSTIC_QUESTIONS.length) * 100);
+      const maxPossible = answeredQuestions.reduce((acc, q) => {
+        const weight = q.difficulty === "hard" ? 3 : q.difficulty === "medium" ? 2 : 1;
+        return acc + weight;
+      }, 0);
+
+      score = Math.round((correctCount / maxPossible) * 100);
 
       await updateDoc(doc(db, "students", user.uid), {
         diagnosticCompleted: true,
@@ -116,15 +164,13 @@ export default function DiagnosticTest() {
     );
   }
 
-  const currentQuestion = MOCK_DIAGNOSTIC_QUESTIONS[currentQuestionIndex];
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b p-4 bg-card">
         <div className="container mx-auto flex justify-between items-center">
           <h2 className="font-bold text-primary">Diagnostic Test</h2>
           <span className="text-sm font-medium text-muted-foreground">
-            Question {currentQuestionIndex + 1} of {MOCK_DIAGNOSTIC_QUESTIONS.length}
+            Question {questionsAnswered + 1} of {TOTAL_QUESTIONS_TO_ANSWER}
           </span>
         </div>
       </header>
@@ -135,7 +181,7 @@ export default function DiagnosticTest() {
             <div className="w-full h-2 bg-muted rounded-full">
               <div
                 className="h-full bg-primary rounded-full transition-all duration-300"
-                style={{ width: `${((currentQuestionIndex + 1) / MOCK_DIAGNOSTIC_QUESTIONS.length) * 100}%` }}
+                style={{ width: `${((questionsAnswered + 1) / TOTAL_QUESTIONS_TO_ANSWER) * 100}%` }}
               ></div>
             </div>
           </div>
