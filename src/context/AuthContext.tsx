@@ -23,6 +23,7 @@ export interface UserProfile {
   phone?: string;
   createdAt: Date;
   updatedAt: Date;
+  diagnosticCompleted?: boolean;
 }
 
 interface AuthContextType {

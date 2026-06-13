@@ -33,7 +33,7 @@
 
 ## 🛠️ Configuration Status
 
-- [x] **Firebase**: Configured with provided keys.
+- [x] **Firebase**: Fully pre-configured in `src/lib/firebase/config.ts`. The login page should now work immediately.
 - [!] **Gemini API**: Configured with provided "google api key". *Note: If AI features fail, verify this key at [Google AI Studio](https://aistudio.google.com/app/apikey).*
 - [ ] **Resend (Email)**: Currently using a placeholder. Weekly reports will fail until a real key is provided.
 - [x] **Internal Secrets**: Set to default secure values.
