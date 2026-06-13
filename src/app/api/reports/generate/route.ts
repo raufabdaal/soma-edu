@@ -37,42 +37,62 @@ export async function POST(req: NextRequest) {
       const weekId = `${now.getFullYear()}-W${Math.ceil(now.getDate() / 7)}`;
       const reportId = `${studentId}_${weekId}`;
 
-      // Aggregate Weekly Progress (Simplified for MVP)
-      // In a full implementation, we'd query progress subcollections for the timestamp range
+      // 1. Count completed lessons this week
+      const lessonsQuery = query(
+        collection(db, "students", studentId, "progress"),
+        where("completedAt", ">=", Timestamp.fromDate(weekStart))
+      );
+      const lessonsSnap = await getDocs(lessonsQuery);
+      const lessonsCompletedCount = lessonsSnap.size;
+
+      // 2. Count past paper submissions this week
+      const questionsQuery = query(
+        collection(db, "students", studentId, "progress", "questions", "submissions"),
+        where("timestamp", ">=", Timestamp.fromDate(weekStart))
+      );
+      const questionsSnap = await getDocs(questionsQuery);
+      const questionsAttemptedCount = questionsSnap.size;
+
+      // Aggregate Weekly Progress
       const report: WeeklyReport = {
         id: reportId,
         studentId,
         weekId,
         weekStart: Timestamp.fromDate(weekStart),
         weekEnd: Timestamp.fromDate(now),
-        totalStudyMinutes: 120, // Placeholder
-        lessonsCompleted: 5,   // Placeholder
-        questionsAttempted: 15, // Placeholder
+        totalStudyMinutes: lessonsCompletedCount * 15, // Estimate 15 mins per lesson
+        lessonsCompleted: lessonsCompletedCount,
+        questionsAttempted: questionsAttemptedCount,
         subjectBreakdown: {},
-        weakAreas: ["Organic Chemistry"], // Placeholder
-        guaranteeProgress: 67, // Placeholder
+        weakAreas: [],
+        guaranteeProgress: studentData.diagnosticCompleted ? 67 : 0, // Placeholder calculation logic
         generatedAt: Timestamp.now(),
         deliveredEmail: false,
         deliveredWhatsapp: false
       };
 
-      // Map subject grades
+      // Map subject grades from the student document
       Object.entries(studentData.predictedGrades || {}).forEach(([sub, grade]) => {
         report.subjectBreakdown[sub] = {
-          studyMinutes: 40,
-          lessonsCompleted: 2,
+          studyMinutes: 0, // Would require deeper subcollection queries
+          lessonsCompleted: 0,
           predictedGrade: grade,
           gradeChange: 0
         };
       });
 
+      // Identify weak areas (Simplified: topics scoring below 50% in diagnostic)
+      Object.entries(studentData.diagnosticScores || {}).forEach(([topic, score]) => {
+        if (score < 50) report.weakAreas.push(topic);
+      });
+
       // Save Report to Firestore
       await setDoc(doc(db, "weeklyReports", reportId), report);
 
-      // Trigger Email via Resend (Placeholder logic)
+      // Trigger Email via Resend
       if (process.env.RESEND_API_KEY) {
-        // fetch('https://api.resend.com/emails', { ... })
-        console.log(`Report generated and email queued for student ${studentId}`);
+        console.log(`Report generated for student ${studentId}`);
+        // Integration point for Resend SDK
       }
 
       results.push({ studentId, status: "success" });

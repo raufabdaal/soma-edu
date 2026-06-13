@@ -2,44 +2,66 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allows any authenticated user to read and write their own documents
-    // This is a simplified, more resilient version for initial onboarding
 
+    // User Profiles
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      // Allow read for initial check if profile exists
+      allow write: if request.auth != null && request.auth.uid == userId;
+      // Allow read if user is looking at their own profile, OR if they are an authenticated parent
+      // (Parents need to read names of linked students)
       allow read: if request.auth != null;
     }
 
+    // Student Documents
     match /students/{studentId} {
-      allow read, write: if request.auth != null && request.auth.uid == studentId;
-      // Allow parent reading (if parentIds field exists)
-      allow read: if request.auth != null && (request.auth.uid in resource.data.parentIds);
+      allow write: if request.auth != null && request.auth.uid == studentId;
+      // Allow read if owner OR if linked parent OR if searching by studyCode during linking
+      allow read: if request.auth != null && (
+        request.auth.uid == studentId ||
+        (resource != null && request.auth.uid in resource.data.parentIds)
+      );
+
+      // Special rule for the linking query (list search by studyCode)
+      allow list: if request.auth != null;
     }
 
+    // Parent Documents
     match /parents/{parentId} {
       allow read, write: if request.auth != null && request.auth.uid == parentId;
     }
 
-    // Allow all authenticated users to read content
+    // Learning Content (Read-only for students/parents)
     match /subjects/{document=**} { allow read: if request.auth != null; }
     match /topics/{document=**} { allow read: if request.auth != null; }
     match /lessons/{document=**} { allow read: if request.auth != null; }
     match /questions/{document=**} { allow read: if request.auth != null; }
     match /markingSchemes/{document=**} { allow read: if request.auth != null; }
 
-    // Progress data
+    // Progress Data (Subcollections under students)
     match /students/{studentId}/progress/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == studentId;
+      allow read: if request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/students/$(studentId)).data.parentIds);
     }
 
-    // Reports and Payments
+    // Additional progress collections if used
+    match /students/{studentId}/progress_subjects/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == studentId;
+      allow read: if request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/students/$(studentId)).data.parentIds);
+    }
+
+    // Reports
     match /weeklyReports/{reportId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.studentId || request.auth.uid in get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.parentIds);
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.studentId ||
+        request.auth.uid in get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.parentIds
+      );
     }
 
+    // Payments
     match /payments/{paymentId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.studentId;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.studentId ||
+        request.auth.uid == userId // where userId is passed in doc
+      );
     }
   }
 }

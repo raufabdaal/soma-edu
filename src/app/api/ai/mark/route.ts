@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { getGeminiResponse } from "@/lib/ai/gemini";
+import { getAiResponse } from "@/lib/ai/nvidia";
 import { MARKING_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { PastPaperQuestion, TopicMarkingScheme } from "@/types";
 
@@ -42,16 +42,16 @@ export async function POST(req: NextRequest) {
       .replace("{{COMMON_MISTAKES}}", markingSchemeData?.commonMistakes.join(", ") || "None specified")
       .replace("{{STUDENT_ANSWER}}", studentAnswer);
 
-    const aiResponse = await getGeminiResponse(studentAnswer, prompt);
+    const aiResponse = await getAiResponse(studentAnswer, prompt);
 
-    // Robustly parse the JSON response from Gemini
+    // Robustly parse the JSON response from AI
     let result;
     try {
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       const cleanJson = jsonMatch ? jsonMatch[0] : aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
       result = JSON.parse(cleanJson);
     } catch (parseError) {
-      console.error("Gemini JSON Parse Error:", aiResponse, parseError);
+      console.error("AI JSON Parse Error:", aiResponse, parseError);
       throw new Error("Failed to parse AI response as JSON");
     }
 

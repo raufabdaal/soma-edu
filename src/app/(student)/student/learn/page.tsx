@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase/config";
 import { Subject } from "@/types";
 import Link from "next/link";
 
-export default function SubjectSelection() {
+export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,15 +17,15 @@ export default function SubjectSelection() {
         const snap = await getDocs(q);
         const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Subject));
 
-        // Use mocks if DB is empty for initial demo
-        if (data.length === 0) {
-          setSubjects([
-            { id: 'math_s3', name: 'Mathematics', level: 'S3', description: 'Core math curriculum', totalTopics: 5, isActive: true, accentColor: '#2563EB' },
-            { id: 'biology_s3', name: 'Biology', level: 'S3', description: 'Study of living things', totalTopics: 5, isActive: true, accentColor: '#16A34A' },
-            { id: 'chemistry_s3', name: 'Chemistry', level: 'S3', description: 'Matter and reactions', totalTopics: 5, isActive: true, accentColor: '#7C3AED' },
-          ]);
-        } else {
+        if (data.length > 0) {
           setSubjects(data);
+        } else {
+          // Mock data for initial dev if DB is empty
+          setSubjects([
+            { id: 'math_s3', name: 'Mathematics', level: 'S3', description: 'Core math concepts for Senior 3', accentColor: '#2563EB', totalTopics: 12, isActive: true },
+            { id: 'biology_s3', name: 'Biology', level: 'S3', description: 'Study of living organisms', accentColor: '#16A34A', totalTopics: 10, isActive: true },
+            { id: 'chemistry_s3', name: 'Chemistry', level: 'S3', description: 'Matter and chemical reactions', accentColor: '#7C3AED', totalTopics: 8, isActive: true },
+          ]);
         }
       } catch (err) {
         console.error(err);
@@ -36,44 +36,30 @@ export default function SubjectSelection() {
     fetchSubjects();
   }, []);
 
-  if (loading) return <div className="p-8 text-center animate-premium-fade">Loading subjects...</div>;
+  if (loading) return <div className="p-8 text-center animate-premium-fade">Exploring curriculum...</div>;
 
   return (
     <div className="container mx-auto p-4 md:p-8 animate-premium-slide">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">What do you want to learn today?</h1>
-        <p className="text-muted-foreground font-medium">Select a subject to see topics and lessons.</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <h1 className="text-3xl font-black mb-8 italic">Choose a Subject</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {subjects.map((subject) => (
           <Link
             key={subject.id}
             href={`/student/learn/${subject.id}`}
-            className="group relative bg-card border-2 rounded-3xl p-8 transition-all hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 active:scale-[0.98]"
+            className="group relative bg-card border-2 rounded-3xl p-8 overflow-hidden hover:border-primary/50 transition-all hover:translate-y-[-4px] active:scale-[0.98]"
           >
-            <div
-              className="w-16 h-16 rounded-2xl mb-6 flex items-center justify-center text-white shadow-lg"
-              style={{ backgroundColor: subject.accentColor }}
-            >
-              <span className="text-2xl font-black">{subject.name[0]}</span>
-            </div>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full transition-colors group-hover:bg-primary/10"></div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">{subject.level} Curriculum</span>
+            <h2 className="text-2xl font-black mb-4">{subject.name}</h2>
+            <p className="text-sm text-muted-foreground font-medium mb-8 leading-relaxed">{subject.description}</p>
 
-            <h3 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors">{subject.name}</h3>
-            <p className="text-sm text-muted-foreground font-medium mb-6 leading-relaxed">
-              {subject.description}
-            </p>
-
-            <div className="flex items-center justify-between pt-6 border-t">
-              <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                {subject.totalTopics} Topics
-              </span>
-              <div className="flex items-center gap-1 text-primary font-bold text-sm">
-                Start Learning
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="3" fill="none">
+            <div className="flex items-center justify-between">
+               <span className="text-xs font-bold text-primary">{subject.totalTopics} Topics</span>
+               <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-transform group-hover:scale-110">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="3" fill="none">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
-              </div>
+               </div>
             </div>
           </Link>
         ))}

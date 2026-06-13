@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { getGeminiResponse } from "@/lib/ai/gemini";
+import { getAiResponse } from "@/lib/ai/nvidia";
 import { TUTOR_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { TopicMarkingScheme } from "@/types";
 
@@ -35,9 +35,9 @@ export async function POST(req: NextRequest) {
 
     let reply;
     try {
-      reply = await getGeminiResponse(fullPrompt, systemPrompt);
+      reply = await getAiResponse(fullPrompt, systemPrompt);
     } catch (apiError) {
-      console.error("Gemini API Error:", apiError);
+      console.error("AI API Error:", apiError);
       reply = "I'm having a bit of trouble connecting to my knowledge base right now. Please try again in a moment!";
     }
 

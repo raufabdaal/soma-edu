@@ -7,7 +7,7 @@
 - [x] Role-based User Profiles (Student/Parent)
 - [x] Student Profile Initialization (Study Code, Trial Status)
 
-### 🤖 AI Integration (Gemini 1.5 Flash)
+### 🤖 AI Integration (Nvidia NIM)
 - [x] AI Marking Engine (`/api/ai/mark`) - Marks past papers against UNEB schemes
 - [x] Context-Aware AI Tutor (`/api/ai/tutor`) - Subject-specific chat assistance
 - [x] Dynamic Marking Scheme Injection - Admin-updatable schemes (Backend ready)
@@ -35,7 +35,7 @@
 
 - [x] **Firebase Config**: Fully pre-configured in `src/lib/firebase/config.ts`.
 - [ ] **Firestore Rules**: **Manual Action Required.** Copy the contents of `firestore.rules` and paste them into the "Rules" tab of your Cloud Firestore in the Firebase Console to fix the "Missing permissions" error.
-- [!] **Gemini API**: Configured with provided "google api key". *Note: If AI features fail, verify this key at [Google AI Studio](https://aistudio.google.com/app/apikey).*
+- [x] **Nvidia NIM API**: Replaced Google AI with Nvidia NIM for more reliable AI Marking and Tutoring.
 - [ ] **Resend (Email)**: Currently using a placeholder. Weekly reports will fail until a real key is provided.
 - [x] **Internal Secrets**: Set to default secure values.
 
@@ -52,7 +52,7 @@ Firebase only allows logins from domains it trusts.
 - **Action:** Ensure both `localhost` AND `soma-edu.vercel.app` are in the list.
 
 #### **3. Finding Missing Keys**
-- **Gemini API Key:** Go to [aistudio.google.com](https://aistudio.google.com/app/apikey) and click "Create API key".
+- **Nvidia API Key:** Go to [build.nvidia.com](https://build.nvidia.com/explore/discover) and create an API key.
 - **Resend API Key:** Go to [resend.com](https://resend.com/), create an account, and get your API key from the dashboard.
 
 ---
