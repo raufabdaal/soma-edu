@@ -28,8 +28,10 @@ export default function StudentLayout({
         return;
       }
 
-      // 3. Right role but profile still syncing? Give it a moment or continue
-      if (userProfile && userProfile.role !== "student") {
+      // 3. Ensure profile is loaded and role is correct
+      if (!userProfile) return;
+
+      if (userProfile.role !== "student") {
         router.replace("/");
         return;
       }

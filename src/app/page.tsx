@@ -9,20 +9,25 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.replace("/login");
-      } else if (userProfile) {
-        if (userProfile.role === "student") {
-          router.replace("/student/dashboard");
-        } else if (userProfile.role === "parent") {
-          router.replace("/parent/dashboard");
-        }
+    if (loading) return;
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    if (userProfile) {
+      if (userProfile.role === "student") {
+        router.replace("/student/dashboard");
+      } else if (userProfile.role === "parent") {
+        router.replace("/parent/dashboard");
       } else {
-        // Logged in but profile hasn't loaded or doesn't exist
+        // Handle other roles or default
         router.replace("/login");
       }
     }
+    // If user is authenticated but userProfile is still null,
+    // we wait for the next render where userProfile might be loaded.
   }, [user, userProfile, loading, router]);
 
   return (
