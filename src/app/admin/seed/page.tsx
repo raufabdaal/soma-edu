@@ -4,7 +4,6 @@ import { useState } from "react";
 import { db } from "@/lib/firebase/config";
 import { doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 
 // Detailed educational content mapping to Ugandan UNEB standard.
 // Handcrafted real subjects, topics, and lessons instead of basic templates or lorem ipsum.
@@ -472,7 +471,6 @@ const SEED_DATA = {
 
 export default function SeedPage() {
   const router = useRouter();
-  const { userProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
