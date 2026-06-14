@@ -41,8 +41,8 @@ export default function ParentDashboard() {
 
             if (sSnap.exists()) {
               const sData = sSnap.data() as Student;
-              const uData = uSnap.exists() ? uSnap.data() as User : {};
-              students.push({ ...sData, displayName: uData.displayName });
+              const uData = uSnap.exists() ? uSnap.data() as User : null;
+              students.push({ ...sData, displayName: uData?.displayName });
             }
           }
           setLinkedStudents(students);
@@ -257,7 +257,7 @@ export default function ParentDashboard() {
                       { type: "Practice", title: "Attempted: Biology 2023 Paper", time: "Yesterday", color: "text-green-500" },
                       { type: "Tutor", title: "Asked 4 questions in AI Tutor", time: "2 days ago", color: "text-violet-500" }
                     ].map((act, i) => (
-                      <div key={i} className="flex gap-4 items-start">
+                      <div key={i} className={`flex gap-4 items-start `}>
                         <div className={`w-2 h-2 rounded-full mt-2 ${act.color.replace('text', 'bg')}`}></div>
                         <div>
                           <p className="text-sm font-bold">{act.title}</p>

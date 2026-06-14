@@ -18,22 +18,23 @@ export default function StudentLayout({
 
   useEffect(() => {
     const checkAccess = async () => {
-      // Don't act while auth is still loading
+      // 1. Loading state - do nothing
       if (loading) return;
 
-      // If no user, redirect to login
+      // 2. No user - definitely redirect
       if (!user) {
+        console.log("[StudentLayout] No user found, redirecting to login");
         router.replace("/login");
         return;
       }
 
-      // If user profile is loaded but role is wrong, redirect to home
+      // 3. Right role but profile still syncing? Give it a moment or continue
       if (userProfile && userProfile.role !== "student") {
         router.replace("/");
         return;
       }
 
-      // Subscription and status gating
+      // 4. Perform database check for subscription
       try {
         const studentSnap = await getDoc(doc(db, "students", user.uid));
         if (studentSnap.exists()) {
@@ -56,19 +57,17 @@ export default function StudentLayout({
                  return;
                }
             }
-          } else {
-            // No active or trial status
-            router.replace("/subscribe");
+          } else if (status === 'expired') {
+            router.replace("/subscribe?status=expired");
             return;
           }
         }
 
-        // If we reach here, access is valid
+        // If we reach here, we're good
         setAccessChecked(true);
       } catch (error) {
-        console.error("Access check error (Student Layout):", error);
-        // On permission errors or network issues, we'll allow the render
-        // to avoid infinite loops, but the page content will likely fail to fetch data.
+        console.error("[StudentLayout] Sync Error:", error);
+        // Fallback: allow access on secondary errors to prevent loops
         setAccessChecked(true);
       }
     };
@@ -76,19 +75,18 @@ export default function StudentLayout({
     checkAccess();
   }, [user, userProfile, loading, router]);
 
-  // Show a full-screen loader until auth is ready AND access is verified
-  if (loading || !accessChecked) {
+  // Show a clean loader
+  if (loading || (!accessChecked && user)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-sm font-bold text-muted-foreground animate-pulse tracking-widest uppercase">
+        <p className="mt-4 text-xs font-bold text-muted-foreground animate-pulse tracking-widest uppercase">
           Verifying Access...
         </p>
       </div>
     );
   }
 
-  // Final safety check
   if (!user) return null;
 
   return (

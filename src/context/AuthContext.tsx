@@ -45,32 +45,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       setUser(firebaseUser);
+
       if (firebaseUser) {
-        console.log("Auth State Changed: User Logged In", firebaseUser.uid);
         try {
-          // Fetch user profile from Firestore
           const docRef = doc(db, "users", firebaseUser.uid);
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
-            console.log("Profile Found:", docSnap.data());
             setUserProfile(docSnap.data() as UserProfile);
           } else {
-            console.log("No Profile Found for UID:", firebaseUser.uid);
+            console.warn("No profile found for user:", firebaseUser.uid);
             setUserProfile(null);
           }
         } catch (error) {
           console.error("Firestore Profile Fetch Error:", error);
-          // If it's a permission error, it likely means the profile doesn't exist yet
-          // or rules are still propagating. We'll set to null and let the UI handle it.
-          const err = error as { code?: string; message?: string };
-          if (err.code === 'permission-denied' || err.message?.includes('permission')) {
-            console.warn("Permission denied for profile fetch - might be a new user.");
-            setUserProfile(null);
-          } else {
-            setUserProfile(null);
-          }
+          setUserProfile(null);
         }
       } else {
         setUserProfile(null);
@@ -85,7 +76,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const credential = await signInWithEmailAndPassword(auth, email, password);
-      // Fetch user profile right after login to avoid lag
       const docRef = doc(db, "users", credential.user.uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
@@ -107,11 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update Auth display name
       await updateProfile(credential.user, { displayName });
 
-      // Create profile document in Firestore
       const newProfile: UserProfile = {
         uid: credential.user.uid,
         email,
@@ -128,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await setDoc(doc(db, "students", credential.user.uid), {
           userId: credential.user.uid,
           parentIds: [],
-          level: "S3", // Default level
+          level: "S3",
           enrolledSubjects: [],
           studyCode,
           subscriptionStatus: "trial",
@@ -160,18 +147,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      // Add custom parameters to prompt for account selection every time
       provider.setCustomParameters({ prompt: 'select_account' });
 
       const credential = await signInWithPopup(auth, provider);
       const firebaseUser = credential.user;
 
-      // Check if profile exists
       const docRef = doc(db, "users", firebaseUser.uid);
       const docSnap = await getDoc(docRef);
 
       if (!docSnap.exists()) {
-        // Create a new profile with the selected role
         const newProfile: UserProfile = {
           uid: firebaseUser.uid,
           email: firebaseUser.email || "",
