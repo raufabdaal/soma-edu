@@ -13,12 +13,14 @@ service cloud.firestore {
 
     // Student Documents
     match /students/{studentId} {
+      // Allow student to manage their own document
       allow write: if request.auth != null && request.auth.uid == studentId;
-      // Allow read if owner OR if linked parent OR if searching by studyCode during linking
-      allow read: if request.auth != null && (
-        request.auth.uid == studentId ||
-        (resource != null && request.auth.uid in resource.data.parentIds)
-      );
+      // Allow authenticated users (parents) to link by adding themselves to parentIds
+      allow update: if request.auth != null &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['parentIds']);
+
+      // Allow read if authenticated (needed for client-side linking/lookup)
+      allow read: if request.auth != null;
 
       // Special rule for the linking query (list search by studyCode)
       allow list: if request.auth != null;
