@@ -9,6 +9,7 @@ import {
   where,
   getDocs,
   doc,
+  setDoc,
   updateDoc,
   arrayUnion,
   getDoc
@@ -78,12 +79,13 @@ export default function ParentDashboard() {
       const studentDoc = querySnapshot.docs[0];
       const studentId = studentDoc.id;
 
-      // Update Parent document
-      await updateDoc(doc(db, "parents", user.uid), {
+      // Ensure Parent document exists and update it
+      await setDoc(doc(db, "parents", user.uid), {
+        userId: user.uid,
         studentIds: arrayUnion(studentId)
-      });
+      }, { merge: true });
 
-      // Update Student document
+      // Update Student document with parent link
       await updateDoc(doc(db, "students", studentId), {
         parentIds: arrayUnion(user.uid)
       });
