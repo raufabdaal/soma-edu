@@ -95,7 +95,15 @@ export default function StudentDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-1">Hello, {studentName}! 👋</h1>
-          <p className="text-muted-foreground font-medium">Ready to reach your 80% goal today?</p>
+          <div className="flex items-center gap-3">
+            <p className="text-muted-foreground font-medium">Ready to reach your 80% goal today?</p>
+            {studentData?.studyCode && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full border text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="opacity-60">Code:</span>
+                <span className="text-foreground">{studentData.studyCode}</span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="bg-card border p-4 rounded-2xl flex items-center gap-4 shadow-sm min-w-[240px]">
           <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary flex items-center justify-center text-primary font-bold">

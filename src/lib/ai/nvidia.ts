@@ -4,7 +4,7 @@ interface NvidiaMessage {
 }
 
 export const getAiResponse = async (prompt: string, systemInstruction?: string) => {
-  const apiKey = process.env.NVIDIA_API_KEY || "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";
+  const apiKey = process.env.NVIDIA_API_KEY;
 
   if (!apiKey || apiKey === "your_nvidia_api_key_here") {
     throw new Error("Nvidia API key is missing. Please check your environment variables.");
