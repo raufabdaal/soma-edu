@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -14,53 +14,75 @@ export default function StudentLayout({
 }) {
   const { user, userProfile, loading, logout } = useAuth();
   const router = useRouter();
+  const [accessChecked, setAccessChecked] = useState(false);
 
   useEffect(() => {
     const checkAccess = async () => {
+      // 1. Loading state - do nothing
       if (loading) return;
+
+      // 2. No user - definitely redirect
       if (!user) {
+        console.log("[StudentLayout] No user found, redirecting to login");
         router.replace("/login");
         return;
       }
+
+      // 3. Right role but profile still syncing? Give it a moment or continue
       if (userProfile && userProfile.role !== "student") {
         router.replace("/");
         return;
       }
 
-      // Detailed subscription gating
+      // 4. Perform database check for subscription
       try {
         const studentSnap = await getDoc(doc(db, "students", user.uid));
         if (studentSnap.exists()) {
           const data = studentSnap.data();
           const now = new Date();
-          const isTrial = data.subscriptionStatus === 'trial';
-          const isActive = data.subscriptionStatus === 'active';
-          const expiry = data.subscriptionExpiry?.toDate();
+          const status = data.subscriptionStatus;
 
-          if (isActive && expiry && expiry < now) {
-            router.replace("/subscribe?status=expired");
-          } else if (isTrial && data.trialStartDate) {
-            const trialEnd = new Date(data.trialStartDate.toDate());
-            trialEnd.setDate(trialEnd.getDate() + 14);
-            if (trialEnd < now) {
-              router.replace("/subscribe?status=trial_ended");
+          if (status === 'active') {
+            const expiry = data.subscriptionExpiry?.toDate();
+            if (expiry && expiry < now) {
+              router.replace("/subscribe?status=expired");
+              return;
             }
-          } else if (!isActive && !isTrial) {
-            router.replace("/subscribe");
+          } else if (status === 'trial') {
+            if (data.trialStartDate) {
+               const trialEnd = new Date(data.trialStartDate.toDate());
+               trialEnd.setDate(trialEnd.getDate() + 14);
+               if (trialEnd < now) {
+                 router.replace("/subscribe?status=trial_ended");
+                 return;
+               }
+            }
+          } else if (status === 'expired') {
+            router.replace("/subscribe?status=expired");
+            return;
           }
         }
+
+        // If we reach here, we're good
+        setAccessChecked(true);
       } catch (error) {
-        console.error("Access check error:", error);
+        console.error("[StudentLayout] Sync Error:", error);
+        // Fallback: allow access on secondary errors to prevent loops
+        setAccessChecked(true);
       }
     };
 
     checkAccess();
   }, [user, userProfile, loading, router]);
 
-  if (loading) {
+  // Show a clean loader
+  if (loading || (!accessChecked && user)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-xs font-bold text-muted-foreground animate-pulse tracking-widest uppercase">
+          Verifying Access...
+        </p>
       </div>
     );
   }
@@ -95,7 +117,7 @@ export default function StudentLayout({
           </div>
         </div>
       </header>
-      <main>
+      <main className="pb-20">
         {children}
       </main>
     </div>

@@ -1,81 +1,85 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
-export default function ParentLayout({ children }: { children: React.ReactNode }) {
-  const { user, userProfile, loading, logout } = useAuth();
+export default function ParentLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
+  const [accessChecked, setAccessChecked] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.replace("/login");
-      }
-    }
-  }, [user, loading, router]);
+    if (loading) return;
 
-  // While auth state is loading, show spinner
-  if (loading) {
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    if (userProfile && userProfile.role !== "parent") {
+      router.replace("/");
+      return;
+    }
+
+    setAccessChecked(true);
+  }, [user, userProfile, loading, router]);
+
+  if (loading || !accessChecked) {
     return (
-      <div className="full-screen-loader">
-        <div className="spinner"></div>
-        <p style={{ marginTop: "1rem", color: "var(--text-muted)", fontWeight: 500 }}>
-          Loading profile...
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-xs font-bold text-muted-foreground animate-pulse tracking-widest uppercase">
+          Verifying Parent Portal...
         </p>
       </div>
     );
   }
 
-  // If not logged in, do not render layout content while redirecting
-  if (!user) {
-    return null;
-  }
-
-  // Role check guard (if user is a student, redirect to student dashboard)
-  if (userProfile && userProfile.role !== "parent") {
-    return (
-      <div className="container" style={{ marginTop: "10vh", maxWidth: "500px" }}>
-        <div className="glass-panel" style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          <h2 style={{ color: "var(--error)", fontSize: "1.8rem", fontWeight: 800 }}>Access Denied</h2>
-          <p style={{ color: "var(--text-muted)" }}>
-            This section is restricted to parents. You are logged in as a <strong style={{ textTransform: "capitalize" }}>{userProfile.role}</strong>.
-          </p>
-          <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
-            <button className="btn btn-primary" onClick={() => router.push("/student/dashboard")}>
-              Go to Student Portal
-            </button>
-            <button className="btn btn-secondary" onClick={() => logout()}>
-              Log Out
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="animate-fade-in" style={{ minHeight: "100vh" }}>
-      <header style={{ background: "rgba(10, 10, 15, 0.3)", borderBottom: "1px solid var(--border-glass)", backdropFilter: "blur(12px)" }}>
-        <div className="container navbar" style={{ borderBottom: "none", marginBottom: 0 }}>
-          <div className="nav-logo" style={{ cursor: "pointer" }} onClick={() => router.push("/parent/dashboard")}>
-            SomaEdu
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card/50 backdrop-blur-md sticky top-0 z-50">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link href="/parent/dashboard" className="text-xl font-black text-primary tracking-tighter italic">
+              SomaEdu
+            </Link>
+            <nav className="hidden md:flex items-center gap-6">
+              <Link href="/parent/dashboard" className="text-xs font-black uppercase tracking-widest hover:text-primary transition-colors">Overview</Link>
+              <Link href="/parent/reports" className="text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">Reports</Link>
+              <Link href="/parent/settings" className="text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">Settings</Link>
+            </nav>
           </div>
-          <div className="nav-user">
-            <div className="nav-user-info">
-              <span className="nav-user-name">{userProfile?.displayName || user.displayName || "Parent"}</span>
-              <span className="nav-user-role role-parent">Parent</span>
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-black italic leading-none">{userProfile?.displayName?.split(' ')[0]}</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-primary opacity-70">Parent Account</p>
             </div>
-            <button className="btn btn-danger" style={{ padding: "0.5rem 1rem", fontSize: "0.9rem" }} onClick={() => logout()}>
-              Logout
-            </button>
           </div>
         </div>
       </header>
-      <main className="container" style={{ padding: "2rem 0" }}>
+      <main>
         {children}
       </main>
+
+      {/* Bottom Nav for Mobile */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t py-3 px-6 flex justify-between items-center z-50">
+        <Link href="/parent/dashboard" className="flex flex-col items-center gap-1">
+          <div className="w-1 h-1 bg-primary rounded-full"></div>
+          <span className="text-[10px] font-black uppercase">Home</span>
+        </Link>
+        <Link href="/parent/reports" className="flex flex-col items-center gap-1 opacity-40">
+          <span className="text-[10px] font-black uppercase">Reports</span>
+        </Link>
+        <Link href="/parent/settings" className="flex flex-col items-center gap-1 opacity-40">
+          <span className="text-[10px] font-black uppercase">Settings</span>
+        </Link>
+      </div>
     </div>
   );
 }

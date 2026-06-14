@@ -1,43 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, query, where, orderBy, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { Topic, Subject } from "@/types";
-import Link from "next/link";
+import { Topic } from "@/types";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 
-export default function TopicSelection() {
+export default function TopicsPage() {
   const { subjectId } = useParams();
-  const [subject, setSubject] = useState<Subject | null>(null);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchTopics = async () => {
       try {
-        // Fetch Subject
-        const sSnap = await getDoc(doc(db, "subjects", subjectId as string));
-        if (sSnap.exists()) setSubject({ id: sSnap.id, ...sSnap.data() } as Subject);
-
-        // Fetch Topics
         const q = query(
           collection(db, "topics"),
           where("subjectId", "==", subjectId),
           where("isActive", "==", true),
           orderBy("order", "asc")
         );
-        const tSnap = await getDocs(q);
-        const tData = tSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Topic));
+        const snap = await getDocs(q);
+        const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Topic));
 
-        if (tData.length === 0) {
-          // Mocks
-          setTopics([
-            { id: 'bio_s3_photosynthesis', subjectId: 'biology_s3', title: 'Plant Nutrition & Photosynthesis', description: 'How plants make food', order: 1, totalLessons: 5, estimatedHours: 3, isActive: true },
-            { id: 'bio_s3_respiration', subjectId: 'biology_s3', title: 'Cellular Respiration', description: 'Energy release in cells', order: 2, totalLessons: 4, estimatedHours: 2, isActive: true },
-          ]);
+        if (data.length > 0) {
+          setTopics(data);
         } else {
-          setTopics(tData);
+          // Mock topics for specific subject
+          setTopics([
+            { id: 'topic1', subjectId: subjectId as string, title: "Foundations & Introduction", description: "The starting point for this subject.", order: 1, totalLessons: 5, estimatedHours: 4, isActive: true },
+            { id: 'topic2', subjectId: subjectId as string, title: "Advanced Applications", description: "Applying core concepts to complex problems.", order: 2, totalLessons: 8, estimatedHours: 6, isActive: true },
+            { id: 'topic3', subjectId: subjectId as string, title: "Exam Preparation", description: "Focusing on UNEB marking schemes and patterns.", order: 3, totalLessons: 4, estimatedHours: 3, isActive: true },
+          ]);
         }
       } catch (err) {
         console.error(err);
@@ -45,57 +40,48 @@ export default function TopicSelection() {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchTopics();
   }, [subjectId]);
 
-  if (loading) return <div className="p-8 text-center animate-premium-fade">Loading topics...</div>;
+  if (loading) return <div className="p-8 text-center animate-premium-fade">Loading modules...</div>;
 
   return (
     <div className="container mx-auto p-4 md:p-8 animate-premium-slide">
-      <div className="mb-10 flex items-center justify-between">
-        <div>
-          <Link href="/student/learn" className="text-sm font-bold text-primary flex items-center gap-1 mb-4 hover:underline">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="3" fill="none">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            All Subjects
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">{subject?.name || "Topics"}</h1>
-          <p className="text-muted-foreground font-medium">Select a topic to begin your lessons.</p>
-        </div>
-      </div>
+      <Link href="/student/learn" className="inline-flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-primary mb-8 transition-colors">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="3" fill="none">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        All Subjects
+      </Link>
 
-      <div className="max-w-4xl space-y-4">
-        {topics.map((topic, index) => (
-          <div
+      <h1 className="text-3xl font-black mb-10 italic uppercase">Curriculum Topics</h1>
+
+      <div className="space-y-4 max-w-4xl">
+        {topics.map((topic, i) => (
+          <Link
             key={topic.id}
-            className="bg-card border-2 rounded-2xl overflow-hidden group hover:border-primary/30 transition-all shadow-sm"
+            href={`/student/learn/${subjectId}/${topic.id}/lesson1`} // Placeholder lesson logic
+            className="group block bg-card border-2 rounded-2xl p-6 hover:border-primary/40 transition-all active:scale-[0.99]"
           >
-            <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex items-center gap-6">
-                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center font-black text-lg text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                  {index + 1}
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg leading-tight mb-1">{topic.title}</h3>
-                  <p className="text-sm text-muted-foreground font-medium">{topic.description}</p>
-                </div>
+            <div className="flex items-center gap-6">
+              <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center text-xl font-black group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                {i + 1}
               </div>
-
-              <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{topic.totalLessons} Lessons</p>
-                  <p className="text-xs font-medium text-muted-foreground opacity-70">~{topic.estimatedHours}h study time</p>
-                </div>
-                <Link
-                  href={`/student/learn/${subjectId}/${topic.id}/lesson_1`}
-                  className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                  Start Topic
-                </Link>
+              <div className="flex-1">
+                <h2 className="font-bold text-lg mb-1">{topic.title}</h2>
+                <p className="text-sm text-muted-foreground font-medium">{topic.description}</p>
+              </div>
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-black uppercase text-muted-foreground">{topic.totalLessons} Lessons</p>
+                <p className="text-[10px] font-bold text-primary">{topic.estimatedHours} Hours</p>
+              </div>
+              <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-muted-foreground group-hover:border-primary group-hover:text-primary transition-colors">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="3" fill="none">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
