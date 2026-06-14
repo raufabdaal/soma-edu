@@ -98,47 +98,55 @@ export default function ParentDashboard() {
     }
   };
 
-  if (loading) return <div className="p-8 text-center animate-premium-fade">Loading parent portal...</div>;
+  if (loading) return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center">
+      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <p className="mt-4 text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Portal...</p>
+    </div>
+  );
 
   const selectedStudent = linkedStudents.find(s => s.userId === selectedStudentId);
 
   return (
     <div className="container mx-auto p-4 md:p-8 animate-premium-slide">
-      <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2 text-foreground">Parent Dashboard</h1>
-          <p className="text-muted-foreground font-medium">Monitoring academic progress for your children.</p>
-        </div>
-
-        {linkedStudents.length > 0 && (
-          <div className="flex items-center gap-3 bg-card border p-1.5 rounded-2xl shadow-sm">
-            {linkedStudents.map(student => (
-              <button
-                key={student.userId}
-                onClick={() => setSelectedChildId(student.userId)}
-                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${
-                  selectedStudentId === student.userId
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                    : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {student.displayName?.split(' ')[0] || "Student"}
-              </button>
-            ))}
-            <button
-              onClick={() => { setStudyCode(""); setLinkedStudents([]); }} // Reset to show link UI
-              className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground"
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.5" fill="none">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </button>
+      {/* Premium Header */}
+      <div className="welcome-banner mb-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h1 className="text-3xl font-black italic tracking-tighter mb-2">Parent Portal</h1>
+            <p className="opacity-80 font-medium">Real-time visibility into your child&apos;s academic journey.</p>
           </div>
-        )}
-      </header>
+
+          {linkedStudents.length > 0 && (
+            <div className="flex items-center gap-3 bg-white/10 p-1.5 rounded-2xl backdrop-blur-md">
+              {linkedStudents.map(student => (
+                <button
+                  key={student.userId}
+                  onClick={() => setSelectedChildId(student.userId)}
+                  className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                    selectedStudentId === student.userId
+                      ? "bg-white text-primary shadow-lg"
+                      : "text-white/60 hover:bg-white/5"
+                  }`}
+                >
+                  {student.displayName?.split(' ')[0] || "Student"}
+                </button>
+              ))}
+              <button
+                onClick={() => { setStudyCode(""); setLinkedStudents([]); }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-white/10 transition-colors text-white"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="3" fill="none">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {linkedStudents.length === 0 ? (
-        <div className="max-w-md mx-auto bg-card border rounded-3xl p-10 shadow-xl text-center">
+        <div className="max-w-md mx-auto glass-panel p-10 text-center">
           <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8 text-primary rotate-3">
             <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" strokeWidth="2" fill="none">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -158,36 +166,36 @@ export default function ParentDashboard() {
                 value={studyCode}
                 onChange={(e) => setStudyCode(e.target.value)}
                 placeholder="TRV-2A9"
-                className="w-full px-4 py-5 rounded-2xl border-2 text-center font-mono text-2xl font-black tracking-widest focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                className="w-full px-4 py-5 rounded-2xl border-2 text-center font-mono text-2xl font-black tracking-widest focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all bg-background"
                 maxLength={7}
               />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">6-Character Study Code</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">6-Character Study Code</p>
             </div>
             {error && <p className="text-sm font-bold text-destructive bg-destructive/10 py-2 rounded-lg">{error}</p>}
             <button
               disabled={linking || !studyCode}
-              className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black shadow-xl shadow-primary/25 hover:translate-y-[-2px] active:translate-y-[0] transition-all disabled:opacity-50"
+              className="btn btn-primary w-full py-4 text-lg uppercase tracking-tighter italic"
             >
               {linking ? "Linking..." : "Link Student Account"}
             </button>
           </form>
         </div>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-8">
           {selectedStudent && (
             <>
               {/* Top Stats Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  {/* Subject Grades */}
-                 <div className="bg-card border rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                 <div className="glass-panel flex flex-col justify-between">
                   <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-8">Current Grades</h3>
                   <div className="space-y-6">
                     {Object.entries(selectedStudent.predictedGrades || { "No Subjects": "N/A" }).map(([subject, grade]) => (
-                      <div key={subject} className="flex justify-between items-center">
-                        <span className="font-bold text-sm text-foreground">{subject.split('_')[0].toUpperCase()}</span>
+                      <div key={subject} className="flex justify-between items-center border-b border-muted pb-3 last:border-0">
+                        <span className="font-bold text-sm text-foreground uppercase tracking-tight">{subject.split('_')[0]}</span>
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl font-black text-primary">{grade}</span>
-                          <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-[10px] font-black">↑</span>
+                          <span className="text-2xl font-black text-primary italic">{grade}</span>
+                          <span className={`dash-tag tag-success`}>↑</span>
                         </div>
                       </div>
                     ))}
@@ -195,73 +203,81 @@ export default function ParentDashboard() {
                 </div>
 
                 {/* Guarantee Progress */}
-                <div className="md:col-span-2 bg-primary text-primary-foreground rounded-3xl p-8 shadow-xl shadow-primary/20 flex flex-col justify-between">
-                  <div className="flex justify-between items-start mb-8">
+                <div className="md:col-span-2 bg-primary text-primary-foreground rounded-3xl p-8 shadow-xl shadow-primary/20 flex flex-col justify-between relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
+                  <div className="flex justify-between items-start mb-8 relative z-10">
                     <div>
                       <h3 className="text-xs font-black uppercase tracking-widest opacity-70 mb-2">80% Result Guarantee</h3>
-                      <p className="text-4xl font-black italic">67% Complete</p>
+                      <p className="text-5xl font-black italic tracking-tighter">67%</p>
                     </div>
-                    <div className="bg-white/15 p-3 rounded-2xl backdrop-blur-md">
+                    <div className="bg-white/15 p-3 rounded-2xl backdrop-blur-md border border-white/10">
                       <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" strokeWidth="2.5" fill="none">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                       </svg>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="w-full h-4 bg-white/20 rounded-full overflow-hidden">
-                      <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: "67%" }}></div>
+                  <div className="space-y-4 relative z-10">
+                    <div className="w-full h-4 bg-white/20 rounded-full overflow-hidden border border-white/10">
+                      <div className="h-full bg-white rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(255,255,255,0.5)]" style={{ width: "67%" }}></div>
                     </div>
-                    <p className="text-sm font-bold opacity-90 leading-relaxed">
-                      {selectedStudent.displayName?.split(' ')[0]} has completed 67% of the required study plan to activate the grade guarantee.
+                    <p className="text-sm font-bold opacity-90 leading-relaxed max-w-md">
+                      {selectedStudent.displayName?.split(' ')[0]} is on track! Complete 13% more tasks to activate the 80% score guarantee.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Sections */}
+              {/* Action Sections */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Needs Attention */}
-                <div className="bg-card border rounded-3xl p-8 shadow-sm">
+                <div className="glass-panel border-l-4 border-l-orange-500">
                   <div className="flex items-center gap-3 mb-8">
-                    <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
-                      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2.5" fill="none">
+                    <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center shadow-inner">
+                      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2.5" fill="none">
                         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                         <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-black italic">Needs Attention</h3>
+                    <h3 className="text-xl font-black italic uppercase tracking-tighter">Needs Attention</h3>
                   </div>
 
                   <div className="space-y-4">
                     {[
-                      { topic: "Organic Chemistry", subject: "Chemistry", score: "34%" },
-                      { topic: "Calculus Basics", subject: "Mathematics", score: "42%" }
+                      { topic: "Organic Chemistry", subject: "Chemistry", score: "34%", trend: "down" },
+                      { topic: "Calculus Basics", subject: "Mathematics", score: "42%", trend: "up" }
                     ].map((item, i) => (
-                      <div key={i} className="p-4 bg-muted/40 rounded-2xl flex justify-between items-center border border-transparent hover:border-orange-200 transition-colors">
+                      <div key={i} className="p-5 bg-muted/30 rounded-2xl flex justify-between items-center border border-transparent hover:border-muted-foreground/10 transition-all group">
                         <div>
-                          <p className="font-bold text-sm">{item.topic}</p>
+                          <p className="font-bold text-sm group-hover:text-primary transition-colors">{item.topic}</p>
                           <p className="text-[10px] font-black uppercase text-muted-foreground">{item.subject}</p>
                         </div>
-                        <span className="text-orange-600 font-black">{item.score}</span>
+                        <div className="text-right">
+                           <span className="text-orange-600 font-black block text-lg">{item.score}</span>
+                           <span className="text-[8px] font-black uppercase text-muted-foreground">Mastery Level</span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Recent Activity */}
-                <div className="bg-card border rounded-3xl p-8 shadow-sm">
-                  <h3 className="text-lg font-black italic mb-8">Weekly Activity</h3>
+                {/* Quick Reports Section */}
+                <div className="glass-panel">
+                  <div className="flex justify-between items-start mb-8">
+                    <h3 className="text-xl font-black italic uppercase tracking-tighter">Weekly Activity</h3>
+                    <button className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">View All Reports</button>
+                  </div>
                   <div className="space-y-6">
                     {[
-                      { type: "Lesson", title: "Finished: Acids & Bases", time: "2 hours ago", color: "text-blue-500" },
-                      { type: "Practice", title: "Attempted: Biology 2023 Paper", time: "Yesterday", color: "text-green-500" },
-                      { type: "Tutor", title: "Asked 4 questions in AI Tutor", time: "2 days ago", color: "text-violet-500" }
+                      { type: "Lesson", title: "Finished: Acids & Bases", time: "2 hours ago", color: "bg-blue-500" },
+                      { type: "Practice", title: "Attempted: Biology 2023 Paper", time: "Yesterday", color: "bg-green-500" },
+                      { type: "Tutor", title: "Asked 4 questions in AI Tutor", time: "2 days ago", color: "bg-violet-500" }
                     ].map((act, i) => (
-                      <div key={i} className={`flex gap-4 items-start `}>
-                        <div className={`w-2 h-2 rounded-full mt-2 ${act.color.replace('text', 'bg')}`}></div>
+                      <div key={i} className="flex gap-6 items-start relative pb-6 last:pb-0">
+                        {i < 2 && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-muted"></div>}
+                        <div className={`w-4 h-4 rounded-full mt-1.5 z-10 border-4 border-background ${act.color}`}></div>
                         <div>
-                          <p className="text-sm font-bold">{act.title}</p>
-                          <p className="text-xs text-muted-foreground">{act.time}</p>
+                          <p className="text-sm font-bold leading-none mb-1">{act.title}</p>
+                          <p className="text-[10px] font-black uppercase text-muted-foreground">{act.time}</p>
                         </div>
                       </div>
                     ))}

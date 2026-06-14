@@ -65,6 +65,82 @@
   }
 }
 
+.welcome-banner {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 2rem;
+  border-radius: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.glass-panel {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dash-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dash-tag {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.tag-success {
+  background-color: #f0fdf4;
+  color: #15803d;
+}
+
+.tag-primary {
+  background-color: rgba(var(--primary), 0.1);
+  color: hsl(var(--primary));
+}
+
+.tag-warning {
+  background-color: #fff7ed;
+  color: #c2410c;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+.btn-primary {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 10px 15px -3px rgba(var(--primary), 0.2);
+}
+
+.btn-secondary {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.btn-secondary:hover {
+  background-color: rgba(var(--muted), 0.8);
+}
+
 @layer utilities {
   .animate-premium-fade {
     animation: premium-fade 0.6s cubic-bezier(0.16, 1, 0.3, 1);
