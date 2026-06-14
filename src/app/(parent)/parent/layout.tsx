@@ -22,12 +22,17 @@ export default function ParentLayout({
       return;
     }
 
-    if (userProfile && userProfile.role !== "parent") {
-      router.replace("/");
-      return;
+    // Only set accessChecked once userProfile is confirmed
+    if (userProfile) {
+      if (userProfile.role !== "parent") {
+        router.replace("/");
+      } else {
+        setAccessChecked(true);
+      }
+    } else {
+      // If loading is done but no profile, this is an error state
+      console.warn("Parent Portal: No profile found for authenticated user.");
     }
-
-    setAccessChecked(true);
   }, [user, userProfile, loading, router]);
 
   if (loading || !accessChecked) {
