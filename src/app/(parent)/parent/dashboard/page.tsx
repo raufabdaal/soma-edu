@@ -160,7 +160,8 @@ export default function ParentDashboard() {
     setError(null);
 
     try {
-      const q = query(collection(db, "students"), where("studyCode", "==", studyCode.toUpperCase().trim()));
+      const cleanCode = studyCode.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+      const q = query(collection(db, "students"), where("studyCode", "==", cleanCode));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {

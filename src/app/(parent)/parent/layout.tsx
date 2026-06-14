@@ -30,8 +30,8 @@ export default function ParentLayout({
         setAccessChecked(true);
       }
     } else {
-      // If loading is done but no profile, this is an error state
       console.warn("Parent Portal: No profile found for authenticated user.");
+      router.replace("/login");
     }
   }, [user, userProfile, loading, router]);
 
