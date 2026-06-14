@@ -37,6 +37,8 @@ export default function ParentDashboard() {
   const [selectedStudentId, setSelectedChildId] = useState<string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
 
+  const [studentIds, setStudentIds] = useState<string[]>([]);
+
   // 1. Listen to Parent Profile & Linked Students
   useEffect(() => {
     if (!user) return;
@@ -46,51 +48,26 @@ export default function ParentDashboard() {
 
     let synced = false;
 
-    const unsubscribe = onSnapshot(parentRef, async (parentSnap) => {
+    const unsubscribe = onSnapshot(parentRef, (parentSnap) => {
       try {
         if (parentSnap.exists()) {
-          const studentIds = (parentSnap.data().studentIds || []) as string[];
-          console.log("[ParentDashboard] Linked student IDs:", studentIds);
-
-          const students: (Student & { displayName?: string })[] = [];
-
-          if (studentIds.length > 0) {
-            for (const id of studentIds) {
-              try {
-                const sSnap = await getDoc(doc(db, "students", id));
-                const uSnap = await getDoc(doc(db, "users", id));
-
-                if (sSnap.exists()) {
-                  const sData = sSnap.data() as Student;
-                  const uData = uSnap.exists() ? uSnap.data() as User : null;
-                  students.push({ ...sData, displayName: uData?.displayName });
-                }
-              } catch (fetchErr) {
-                console.error(`[ParentDashboard] Error fetching student ${id}:`, fetchErr);
-              }
-            }
-          }
-
-          setLinkedStudents(students);
-
-          // Auto-select first child if none selected or if selected is not in the list
-          if (students.length > 0) {
-            setSelectedChildId(prev => {
-              if (!prev || !students.find(s => s.userId === prev)) {
-                return students[0].userId;
-              }
-              return prev;
-            });
-          }
+          const ids = (parentSnap.data().studentIds || []) as string[];
+          console.log("[ParentDashboard] Linked student IDs:", ids);
+          
+          // Use JSON.stringify check to prevent unnecessary state updates
+          setStudentIds(prev => JSON.stringify(prev) === JSON.stringify(ids) ? prev : ids);
         } else {
           console.log("[ParentDashboard] No parent document found");
-          setLinkedStudents([]);
+          setStudentIds([]);
         }
       } catch (err) {
         console.error("[ParentDashboard] Error in snapshot processing:", err);
       } finally {
-        setLoading(false);
         synced = true;
+        // If there are no students, we can stop loading immediately
+        if (!parentSnap.exists() || (parentSnap.data().studentIds || []).length === 0) {
+          setLoading(false);
+        }
       }
     }, (err) => {
       console.error("[ParentDashboard] Parent snapshot listener error:", err);
@@ -110,6 +87,47 @@ export default function ParentDashboard() {
       clearTimeout(timer);
     };
   }, [user?.uid]);
+
+  // 1b. Fetch student profiles whenever studentIds change
+  useEffect(() => {
+    const fetchStudents = async () => {
+      if (studentIds.length === 0) {
+        setLinkedStudents([]);
+        return;
+      }
+
+      const students: (Student & { displayName?: string })[] = [];
+
+      for (const id of studentIds) {
+        try {
+          const sSnap = await getDoc(doc(db, "students", id));
+          const uSnap = await getDoc(doc(db, "users", id));
+
+          if (sSnap.exists()) {
+            const sData = sSnap.data() as Student;
+            const uData = uSnap.exists() ? uSnap.data() as User : null;
+            students.push({ ...sData, displayName: uData?.displayName });
+          }
+        } catch (fetchErr) {
+          console.error(`[ParentDashboard] Error fetching student ${id}:`, fetchErr);
+        }
+      }
+
+      setLinkedStudents(students);
+
+      // Auto-select first child if none selected or if selected is not in the list
+      setSelectedChildId(prev => {
+        if (!prev || !students.find(s => s.userId === prev)) {
+          return students.length > 0 ? students[0].userId : null;
+        }
+        return prev;
+      });
+
+      setLoading(false);
+    };
+
+    fetchStudents();
+  }, [studentIds]);
 
   // 2. Listen to Activity Feed for Selected Student
   useEffect(() => {

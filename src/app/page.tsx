@@ -31,10 +31,10 @@ export default function Home() {
   }, [user, userProfile, loading, router]);
 
   return (
-    <div className="full-screen-loader">
-      <div className="spinner"></div>
-      <p style={{ marginTop: "1rem", color: "var(--text-muted)", fontWeight: 500 }}>
-        Redirecting you to portal...
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <p className="mt-6 text-xs font-black uppercase tracking-widest text-primary/70 animate-pulse">
+        Initializing SomaEdu...
       </p>
     </div>
   );
