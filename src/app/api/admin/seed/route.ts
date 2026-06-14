@@ -185,8 +185,9 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({ success: true, message: "Database seeded successfully with UNEB sample data." });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error seeding database:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

@@ -86,7 +86,7 @@ export default function ParentDashboard() {
       unsubscribe();
       clearTimeout(timer);
     };
-  }, [user?.uid]);
+  }, [user]);
 
   // 1b. Fetch student profiles whenever studentIds change
   useEffect(() => {
