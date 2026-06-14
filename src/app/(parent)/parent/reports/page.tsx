@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase/config";
-import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from "firebase/firestore";
 import { WeeklyReport } from "@/types";
 
 export default function ReportsPage() {
@@ -15,11 +15,27 @@ export default function ReportsPage() {
     const fetchReports = async () => {
       if (!user) return;
       try {
+        // First get linked student IDs
+        const parentRef = doc(db, "parents", user.uid);
+        const parentSnap = await getDoc(parentRef);
+
+        if (!parentSnap.exists()) {
+          setLoading(false);
+          return;
+        }
+
+        const studentIds = parentSnap.data().studentIds || [];
+
+        if (studentIds.length === 0) {
+          setLoading(false);
+          return;
+        }
+
         const q = query(
           collection(db, "weeklyReports"),
-          where("studentId", "==", "TODO_GET_LINKED_STUDENT_ID"), // Simplified for demo
+          where("studentId", "in", studentIds),
           orderBy("weekStart", "desc"),
-          limit(10)
+          limit(20)
         );
         const snap = await getDocs(q);
         const data = snap.docs.map(doc => doc.data() as WeeklyReport);
