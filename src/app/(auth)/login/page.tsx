@@ -106,26 +106,41 @@ export default function LoginPage() {
 
   if (loading || (user && userProfile)) {
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background z-50">
-        <div className="w-10 h-10 border-4 border-muted border-l-primary rounded-full animate-spin"></div>
-        <p className="mt-4 text-muted-foreground font-medium">Authenticating...</p>
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-50/90 backdrop-blur-md z-50">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p className="mt-6 text-sm font-bold text-slate-800 tracking-wider uppercase animate-pulse">
+          Authenticating...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
-      <div className="w-full max-w-md bg-card border shadow-sm rounded-xl p-8 animate-in fade-in zoom-in-95 duration-300">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50/30 via-slate-50 to-violet-50/40 p-4">
+      {/* Decorative background grid/blobs for modern premium feel */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-200/40 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-200/30 blur-[120px]" />
+      </div>
+
+      <div className="relative w-full max-w-[440px] bg-white border border-slate-100/80 shadow-[0_20px_50px_rgba(79,70,229,0.06)] rounded-[32px] p-10 transition-all duration-300">
+        {/* Brand header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">SomaEdu Portal</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            {isSignUp ? "Create a portal account to get started" : "Sign in to access your dashboard"}
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-600/5 text-indigo-600 mb-4 font-black text-xl">
+            S.
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">SomaEdu</h1>
+          <p className="text-sm text-slate-500 mt-2 font-medium">
+            {isSignUp ? "Create your learning portal account" : "Welcome back. Sign in to your portal"}
           </p>
         </div>
 
         {error && (
-          <div className="bg-destructive/15 text-destructive border border-destructive/20 rounded-md p-3 mb-6 text-sm font-medium flex items-center gap-2">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none">
+          <div className="bg-red-50 text-red-700 border border-red-100/50 rounded-2xl p-4 mb-6 text-sm font-medium flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <svg className="w-5 h-5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -135,8 +150,8 @@ export default function LoginPage() {
         )}
 
         {success && (
-          <div className="bg-green-100 text-green-800 border border-green-200 rounded-md p-3 mb-6 text-sm font-medium flex items-center gap-2">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none">
+          <div className="bg-emerald-50 text-emerald-800 border border-emerald-100/50 rounded-2xl p-4 mb-6 text-sm font-medium flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <svg className="w-5 h-5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
@@ -144,11 +159,11 @@ export default function LoginPage() {
           </div>
         )}
 
-        <div className="space-y-4 mb-6">
-          <label className="text-sm font-medium text-foreground">
-            Select Your Role {!isSignUp && <span className="text-muted-foreground font-normal">(for Google Registration)</span>}
+        <div className="space-y-3 mb-6">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            Choose Role
           </label>
-          <div className="grid grid-cols-2 gap-2 bg-muted p-1 rounded-lg border">
+          <div className="grid grid-cols-2 gap-2 bg-slate-100/60 p-1.5 rounded-2xl border border-slate-100/30">
             <div>
               <input
                 type="radio"
@@ -159,7 +174,7 @@ export default function LoginPage() {
                 onChange={() => setRole("student")}
                 disabled={submitting}
               />
-              <label htmlFor="role-student" className="flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors text-muted-foreground peer-checked:bg-background peer-checked:text-foreground peer-checked:shadow-sm">
+              <label htmlFor="role-student" className="flex items-center justify-center h-11 text-sm font-bold rounded-xl cursor-pointer transition-all text-slate-500 peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:shadow-sm">
                 Student
               </label>
             </div>
@@ -173,7 +188,7 @@ export default function LoginPage() {
                 onChange={() => setRole("parent")}
                 disabled={submitting}
               />
-              <label htmlFor="role-parent" className="flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors text-muted-foreground peer-checked:bg-background peer-checked:text-foreground peer-checked:shadow-sm">
+              <label htmlFor="role-parent" className="flex items-center justify-center h-11 text-sm font-bold rounded-xl cursor-pointer transition-all text-slate-500 peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:shadow-sm">
                 Parent
               </label>
             </div>
@@ -183,12 +198,12 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && (
             <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="name">Full Name</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest" htmlFor="name">Full Name</label>
               <input
                 id="name"
                 type="text"
-                placeholder="Enter your name"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Ex. John Doe"
+                className="flex h-12 w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-2 text-sm font-medium transition-all placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white disabled:opacity-50"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 disabled={submitting}
@@ -198,12 +213,12 @@ export default function LoginPage() {
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="email">Email Address</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest" htmlFor="email">Email Address</label>
             <input
               id="email"
               type="email"
               placeholder="name@example.com"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-12 w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-2 text-sm font-medium transition-all placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white disabled:opacity-50"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={submitting}
@@ -212,12 +227,12 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="password">Password</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest" htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
               placeholder="••••••••"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-12 w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-2 text-sm font-medium transition-all placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white disabled:opacity-50"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={submitting}
@@ -225,10 +240,14 @@ export default function LoginPage() {
             />
           </div>
 
-          <button type="submit" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full mt-2" disabled={submitting}>
+          <button 
+            type="submit" 
+            className="w-full h-13 mt-6 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-lg shadow-slate-900/10 hover:shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50" 
+            disabled={submitting}
+          >
             {submitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-l-primary-foreground rounded-full animate-spin"></div>
+              <span className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-l-white rounded-full animate-spin"></div>
                 Processing...
               </span>
             ) : isSignUp ? (
@@ -241,16 +260,16 @@ export default function LoginPage() {
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
+            <span className="w-full border-t border-slate-100" />
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+          <div className="relative flex justify-center text-xs uppercase font-bold tracking-widest">
+            <span className="bg-white px-3 text-slate-400">Or continue with</span>
           </div>
         </div>
 
         <button
           type="button"
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full gap-2"
+          className="w-full h-13 border border-slate-200/80 bg-white hover:bg-slate-50 font-bold rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
           onClick={handleGoogleSignIn}
           disabled={submitting}
         >
@@ -263,9 +282,9 @@ export default function LoginPage() {
           Google Sign In
         </button>
 
-        <div className="mt-6 text-center text-sm text-muted-foreground">
+        <div className="mt-6 text-center text-sm font-medium text-slate-500">
           {isSignUp ? "Already have an account?" : "Don't have an account?"}
-          <button type="button" className="ml-1 font-semibold text-primary hover:underline" onClick={toggleMode} disabled={submitting}>
+          <button type="button" className="ml-1 font-bold text-indigo-600 hover:underline" onClick={toggleMode} disabled={submitting}>
             {isSignUp ? "Sign In" : "Sign Up"}
           </button>
         </div>

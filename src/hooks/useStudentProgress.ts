@@ -18,7 +18,8 @@ export function useStudentProgress() {
     if (!user) return;
 
     try {
-      const lessonProgressRef = doc(db, "students", user.uid, "progress", "lessons", "completed", lessonId);
+      // 1. Write activity directly to progress collection so parent activity listener picks it up
+      const lessonProgressRef = doc(db, "students", user.uid, "progress", lessonId);
 
       await setDoc(lessonProgressRef, {
         lessonId,
@@ -30,6 +31,7 @@ export function useStudentProgress() {
         answers
       }, { merge: true });
 
+      // 2. Write to topic summary progress
       const topicProgressRef = doc(db, "students", user.uid, "progress", "topics", "summary", topicId);
       await setDoc(topicProgressRef, {
         topicId,
@@ -37,11 +39,11 @@ export function useStudentProgress() {
         lessonsCompleted: increment(1),
       }, { merge: true });
 
-      const subjectProgressRef = doc(db, "students", user.uid, "progress", "subjects", "summary", subjectId);
+      // 3. Write directly to progress_subjects so StudentDashboard picks it up
+      const subjectProgressRef = doc(db, "students", user.uid, "progress_subjects", subjectId);
       await setDoc(subjectProgressRef, {
-        subjectId,
-        totalStudySeconds: increment(timeSpentSeconds),
-        weeklyStudySeconds: increment(timeSpentSeconds),
+        guaranteeProgress: increment(15), // Increase guarantee progress per lesson
+        predictedGrade: score >= 80 ? "A" : score >= 60 ? "B" : "C",
         lastStudiedAt: Timestamp.now(),
       }, { merge: true });
 

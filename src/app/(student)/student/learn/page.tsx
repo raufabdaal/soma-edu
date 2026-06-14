@@ -22,9 +22,9 @@ export default function SubjectsPage() {
         } else {
           // Mock data for initial dev if DB is empty
           setSubjects([
-            { id: 'math_s3', name: 'Mathematics', level: 'S3', description: 'Core math concepts for Senior 3', accentColor: '#2563EB', totalTopics: 12, isActive: true },
-            { id: 'biology_s3', name: 'Biology', level: 'S3', description: 'Study of living organisms', accentColor: '#16A34A', totalTopics: 10, isActive: true },
-            { id: 'chemistry_s3', name: 'Chemistry', level: 'S3', description: 'Matter and chemical reactions', accentColor: '#7C3AED', totalTopics: 8, isActive: true },
+            { id: 'mathematics', name: 'Mathematics', level: 'O-Level', description: 'Core math concepts for O-Level', accentColor: '#2563EB', totalTopics: 1, isActive: true },
+            { id: 'biology', name: 'Biology', level: 'O-Level', description: 'Study of living organisms', accentColor: '#16A34A', totalTopics: 1, isActive: true },
+            { id: 'chemistry', name: 'Chemistry', level: 'O-Level', description: 'Matter and chemical reactions', accentColor: '#7C3AED', totalTopics: 1, isActive: true },
           ]);
         }
       } catch (err) {

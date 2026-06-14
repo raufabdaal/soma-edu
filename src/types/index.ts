@@ -36,7 +36,7 @@ export interface Parent {
 export interface Subject {
   id: string;
   name: string;
-  level: "S3" | "S4";
+  level: string;
   description: string;
   totalTopics: number;
   isActive: boolean;

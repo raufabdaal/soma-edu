@@ -36,7 +36,7 @@ export default function StudentDashboard() {
         }
 
         // Fetch enrolled subjects metadata
-        const enrolledIds = studentProfileData?.enrolledSubjects || ['math_s3', 'biology_s3', 'chemistry_s3'];
+        const enrolledIds = studentProfileData?.enrolledSubjects || ['mathematics', 'biology', 'chemistry'];
 
         const subjectsData = await Promise.all(enrolledIds.map(async (id: string) => {
           const subjectRef = doc(db, "subjects", id);
