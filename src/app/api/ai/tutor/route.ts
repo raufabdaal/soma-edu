@@ -14,6 +14,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Server-side logging for debugging Nvidia NIM
+    console.log(`[Tutor API] Request for Subject: ${subjectId}, Topic: ${topicId}`);
+
     const markingSchemeRef = doc(db, "markingSchemes", subjectId, "topics", topicId);
     const markingSchemeSnap = await getDoc(markingSchemeRef);
 
@@ -29,21 +32,24 @@ export async function POST(req: NextRequest) {
       .replace("{{GENERAL_GUIDANCE}}", markingSchemeData?.generalGuidance || "Standard UNEB curriculum guidance.")
       .replace("{{KEY_TERMS}}", markingSchemeData?.keyTerms.join(", ") || "N/A");
 
-    const fullPrompt = conversationHistory
-      ? `${JSON.stringify(conversationHistory)}\n\nUser: ${message}`
+    const fullPrompt = conversationHistory && conversationHistory.length > 0
+      ? `History: ${JSON.stringify(conversationHistory.slice(-5))}\n\nUser: ${message}`
       : message;
 
     let reply;
     try {
       reply = await getAiResponse(fullPrompt, systemPrompt);
+      if (!reply) {
+        throw new Error("Empty response from AI engine");
+      }
     } catch (apiError) {
-      console.error("AI API Error:", apiError);
+      console.error("AI API connection error:", apiError);
       reply = "I'm having a bit of trouble connecting to my knowledge base right now. Please try again in a moment!";
     }
 
     return NextResponse.json({ reply });
   } catch (error: unknown) {
-    console.error("AI Tutor Error:", error);
+    console.error("AI Tutor Route Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    console.log(`[Marking API] Student ${studentId} submitted answer for ${questionId}`);
+
     const questionRef = doc(db, "questions", questionId);
     const questionSnap = await getDoc(questionRef);
 
@@ -44,15 +46,19 @@ export async function POST(req: NextRequest) {
 
     const aiResponse = await getAiResponse(studentAnswer, prompt);
 
+    if (!aiResponse) {
+      throw new Error("AI Marking Engine returned an empty response.");
+    }
+
     // Robustly parse the JSON response from AI
     let result;
     try {
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      const cleanJson = jsonMatch ? jsonMatch[0] : aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+      const cleanJson = jsonMatch ? jsonMatch[0] : aiResponse.replace(/\`\\`\`json/g, "").replace(/\`\\`\`/g, "").trim();
       result = JSON.parse(cleanJson);
     } catch (parseError) {
       console.error("AI JSON Parse Error:", aiResponse, parseError);
-      throw new Error("Failed to parse AI response as JSON");
+      throw new Error("Failed to parse AI marking response as JSON");
     }
 
     const progressRef = doc(db, "students", studentId, "progress", "questions", "submissions", questionId);
@@ -64,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    console.error("AI Marking Error:", error);
+    console.error("AI Marking Route Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -14,57 +14,81 @@ export default function StudentLayout({
 }) {
   const { user, userProfile, loading, logout } = useAuth();
   const router = useRouter();
+  const [accessChecked, setAccessChecked] = useState(false);
 
   useEffect(() => {
     const checkAccess = async () => {
+      // Don't act while auth is still loading
       if (loading) return;
+
+      // If no user, redirect to login
       if (!user) {
         router.replace("/login");
         return;
       }
+
+      // If user profile is loaded but role is wrong, redirect to home
       if (userProfile && userProfile.role !== "student") {
         router.replace("/");
         return;
       }
 
-      // Detailed subscription gating
+      // Subscription and status gating
       try {
         const studentSnap = await getDoc(doc(db, "students", user.uid));
         if (studentSnap.exists()) {
           const data = studentSnap.data();
           const now = new Date();
-          const isTrial = data.subscriptionStatus === 'trial';
-          const isActive = data.subscriptionStatus === 'active';
-          const expiry = data.subscriptionExpiry?.toDate();
+          const status = data.subscriptionStatus;
 
-          if (isActive && expiry && expiry < now) {
-            router.replace("/subscribe?status=expired");
-          } else if (isTrial && data.trialStartDate) {
-            const trialEnd = new Date(data.trialStartDate.toDate());
-            trialEnd.setDate(trialEnd.getDate() + 14);
-            if (trialEnd < now) {
-              router.replace("/subscribe?status=trial_ended");
+          if (status === 'active') {
+            const expiry = data.subscriptionExpiry?.toDate();
+            if (expiry && expiry < now) {
+              router.replace("/subscribe?status=expired");
+              return;
             }
-          } else if (!isActive && !isTrial) {
+          } else if (status === 'trial') {
+            if (data.trialStartDate) {
+               const trialEnd = new Date(data.trialStartDate.toDate());
+               trialEnd.setDate(trialEnd.getDate() + 14);
+               if (trialEnd < now) {
+                 router.replace("/subscribe?status=trial_ended");
+                 return;
+               }
+            }
+          } else {
+            // No active or trial status
             router.replace("/subscribe");
+            return;
           }
         }
+
+        // If we reach here, access is valid
+        setAccessChecked(true);
       } catch (error) {
-        console.error("Access check error:", error);
+        console.error("Access check error (Student Layout):", error);
+        // On permission errors or network issues, we'll allow the render
+        // to avoid infinite loops, but the page content will likely fail to fetch data.
+        setAccessChecked(true);
       }
     };
 
     checkAccess();
   }, [user, userProfile, loading, router]);
 
-  if (loading) {
+  // Show a full-screen loader until auth is ready AND access is verified
+  if (loading || !accessChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-sm font-bold text-muted-foreground animate-pulse tracking-widest uppercase">
+          Verifying Access...
+        </p>
       </div>
     );
   }
 
+  // Final safety check
   if (!user) return null;
 
   return (
@@ -95,7 +119,7 @@ export default function StudentLayout({
           </div>
         </div>
       </header>
-      <main>
+      <main className="pb-20">
         {children}
       </main>
     </div>
