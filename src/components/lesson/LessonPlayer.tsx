@@ -40,7 +40,14 @@ export function LessonPlayer({ lesson, onComplete }: LessonPlayerProps) {
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
             <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{lesson.title}</h2>
-            <div className="w-full h-1.5 bg-muted rounded-full mt-2">
+            <div
+              className="w-full h-1.5 bg-muted rounded-full mt-2"
+              role="progressbar"
+              aria-valuenow={Math.round(((currentBlockIndex + 1) / lesson.blocks.length) * 100)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Lesson progress"
+            >
               <div
                 className="h-full bg-primary rounded-full transition-all duration-500"
                 style={{ width: `${((currentBlockIndex + 1) / lesson.blocks.length) * 100}%` }}

@@ -1,0 +1,15 @@
+
+> soma-edu@0.1.0 dev /app
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1810ms
+ ○ Compiling /verify ...
+ ✓ Compiled /verify in 6.8s (699 modules)
+ ✓ Compiled in 798ms (278 modules)
+ GET /verify 200 in 7618ms
+ GET /verify 200 in 78ms
+ ✓ Compiled in 522ms (246 modules)

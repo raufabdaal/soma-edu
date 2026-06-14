@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, X } from "lucide-react";
 
 interface QuestionBlockProps {
   question: string;
@@ -37,7 +38,11 @@ export function QuestionBlock({
     <div className="mb-8 p-6 bg-card border rounded-2xl shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
       <h4 className="text-lg font-bold mb-6 leading-tight">{question}</h4>
 
-      <div className="space-y-3 mb-6">
+      <div
+        className="space-y-3 mb-6"
+        role="radiogroup"
+        aria-label="Question options"
+      >
         {options.map((option, index) => {
           const isSelected = selected === index;
           const isCorrect = index === correctIndex;
@@ -53,9 +58,11 @@ export function QuestionBlock({
           return (
             <button
               key={index}
+              role="radio"
+              aria-checked={isSelected}
               onClick={() => handleSelect(index)}
               disabled={submitted || disabled}
-              className={`w-full p-4 text-left rounded-xl border-2 transition-all flex items-center gap-3 ${
+              className={`w-full p-4 text-left rounded-xl border-2 transition-all flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                 variant === "correct" ? "bg-green-50 border-green-500 text-green-900" :
                 variant === "incorrect" ? "bg-red-50 border-red-500 text-red-900" :
                 variant === "selected" ? "bg-primary/5 border-primary text-primary" :
@@ -70,7 +77,9 @@ export function QuestionBlock({
               }`}>
                 {String.fromCharCode(65 + index)}
               </span>
-              <span className="font-medium">{option}</span>
+              <span className="font-medium flex-1">{option}</span>
+              {submitted && isCorrect && <Check className="w-5 h-5 text-green-600 shrink-0" />}
+              {submitted && isSelected && !isCorrect && <X className="w-5 h-5 text-red-600 shrink-0" />}
             </button>
           );
         })}
@@ -87,7 +96,13 @@ export function QuestionBlock({
       )}
 
       {submitted && (
-        <div className="p-4 bg-muted/50 rounded-xl animate-in zoom-in-95 duration-300">
+        <div
+          className="p-4 bg-muted/50 rounded-xl animate-in zoom-in-95 duration-300"
+          aria-live="polite"
+        >
+          <p className="sr-only">
+            {selected === correctIndex ? "Correct answer." : "Incorrect answer."}
+          </p>
           <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-2">Explanation</p>
           <p className="text-sm leading-relaxed">{explanation}</p>
         </div>
