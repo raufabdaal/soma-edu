@@ -15,7 +15,7 @@ import {
   onSnapshot,
   orderBy,
   limit as firestoreLimit,
-  getDocs
+  getDocs,
 } from "firebase/firestore";
 import { Student, User } from "@/types";
 
@@ -36,45 +36,47 @@ export default function ParentDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [selectedStudentId, setSelectedChildId] = useState<string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
-
   const [studentIds, setStudentIds] = useState<string[]>([]);
 
-  // 1. Listen to Parent Profile & Linked Students
+  // Effect 1: Listen to parent document for linked student ID array
   useEffect(() => {
     if (!user) return;
 
     console.log("[ParentDashboard] Setting up parent document listener");
     const parentRef = doc(db, "parents", user.uid);
-
     let synced = false;
 
-    const unsubscribe = onSnapshot(parentRef, (parentSnap) => {
-      try {
-        if (parentSnap.exists()) {
-          const ids = (parentSnap.data().studentIds || []) as string[];
-          console.log("[ParentDashboard] Linked student IDs:", ids);
-          
-          // Use JSON.stringify check to prevent unnecessary state updates
-          setStudentIds(prev => JSON.stringify(prev) === JSON.stringify(ids) ? prev : ids);
-        } else {
-          console.log("[ParentDashboard] No parent document found");
-          setStudentIds([]);
+    const unsubscribe = onSnapshot(
+      parentRef,
+      (parentSnap) => {
+        try {
+          if (parentSnap.exists()) {
+            const ids = (parentSnap.data().studentIds || []) as string[];
+            console.log("[ParentDashboard] Linked student IDs:", ids);
+            // Prevent unnecessary re-renders with a value comparison
+            setStudentIds((prev) =>
+              JSON.stringify(prev) === JSON.stringify(ids) ? prev : ids
+            );
+          } else {
+            console.log("[ParentDashboard] No parent document found");
+            setStudentIds([]);
+          }
+        } catch (err) {
+          console.error("[ParentDashboard] Error in snapshot processing:", err);
+        } finally {
+          synced = true;
+          if (!parentSnap.exists() || (parentSnap.data().studentIds || []).length === 0) {
+            setLoading(false);
+          }
         }
-      } catch (err) {
-        console.error("[ParentDashboard] Error in snapshot processing:", err);
-      } finally {
-        synced = true;
-        // If there are no students, we can stop loading immediately
-        if (!parentSnap.exists() || (parentSnap.data().studentIds || []).length === 0) {
-          setLoading(false);
-        }
+      },
+      (err) => {
+        console.error("[ParentDashboard] Parent snapshot listener error:", err);
+        setLoading(false);
       }
-    }, (err) => {
-      console.error("[ParentDashboard] Parent snapshot listener error:", err);
-      setLoading(false);
-    });
+    );
 
-    // Emergency fallback to stop the syncing spinner
+    // Fallback: stop spinner if Firestore never responds
     const timer = setTimeout(() => {
       if (!synced) {
         console.warn("[ParentDashboard] Sync timeout reached");
@@ -88,7 +90,7 @@ export default function ParentDashboard() {
     };
   }, [user]);
 
-  // 1b. Fetch student profiles whenever studentIds change
+  // Effect 2: Fetch full student profiles when the ID array changes
   useEffect(() => {
     const fetchStudents = async () => {
       if (studentIds.length === 0) {
@@ -105,7 +107,7 @@ export default function ParentDashboard() {
 
           if (sSnap.exists()) {
             const sData = sSnap.data() as Student;
-            const uData = uSnap.exists() ? uSnap.data() as User : null;
+            const uData = uSnap.exists() ? (uSnap.data() as User) : null;
             students.push({ ...sData, displayName: uData?.displayName });
           }
         } catch (fetchErr) {
@@ -115,9 +117,9 @@ export default function ParentDashboard() {
 
       setLinkedStudents(students);
 
-      // Auto-select first child if none selected or if selected is not in the list
-      setSelectedChildId(prev => {
-        if (!prev || !students.find(s => s.userId === prev)) {
+      // Auto-select first child if none is currently selected
+      setSelectedChildId((prev) => {
+        if (!prev || !students.find((s) => s.userId === prev)) {
           return students.length > 0 ? students[0].userId : null;
         }
         return prev;
@@ -129,7 +131,7 @@ export default function ParentDashboard() {
     fetchStudents();
   }, [studentIds]);
 
-  // 2. Listen to Activity Feed for Selected Student
+  // Effect 3: Listen to activity feed for the selected student
   useEffect(() => {
     if (!selectedStudentId) {
       setActivities([]);
@@ -140,33 +142,42 @@ export default function ParentDashboard() {
     const progressRef = collection(db, "students", selectedStudentId, "progress");
     const q = query(progressRef, orderBy("completedAt", "desc"), firestoreLimit(5));
 
-    const unsubscribe = onSnapshot(q, (snap) => {
-      try {
-        const fetchedActivities: Activity[] = snap.docs.map(doc => {
-          const data = doc.data();
-          const date = data.completedAt?.toDate() || new Date();
-          const timeAgo = Math.floor((new Date().getTime() - date.getTime()) / 60000);
+    const unsubscribe = onSnapshot(
+      q,
+      (snap) => {
+        try {
+          const fetchedActivities: Activity[] = snap.docs.map((docSnap) => {
+            const data = docSnap.data();
+            const date = data.completedAt?.toDate() || new Date();
+            const timeAgo = Math.floor((new Date().getTime() - date.getTime()) / 60000);
 
-          let timeStr = "Just now";
-          if (timeAgo >= 1440) timeStr = `${Math.floor(timeAgo/1440)} days ago`;
-          else if (timeAgo >= 60) timeStr = `${Math.floor(timeAgo/60)} hours ago`;
-          else if (timeAgo > 0) timeStr = `${timeAgo} mins ago`;
+            let timeStr = "Just now";
+            if (timeAgo >= 1440) timeStr = `${Math.floor(timeAgo / 1440)} days ago`;
+            else if (timeAgo >= 60) timeStr = `${Math.floor(timeAgo / 60)} hours ago`;
+            else if (timeAgo > 0) timeStr = `${timeAgo} mins ago`;
 
-          return {
-            id: doc.id,
-            type: "Lesson",
-            title: `Finished: ${data.lessonId?.split('_').map((w:string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || "Lesson"}`,
-            time: timeStr,
-            color: "bg-blue-500"
-          };
-        });
-        setActivities(fetchedActivities);
-      } catch (err) {
-        console.error("[ParentDashboard] Activity feed sync error:", err);
+            return {
+              id: docSnap.id,
+              type: "Lesson",
+              title: `Finished: ${
+                data.lessonId
+                  ?.split("_")
+                  .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+                  .join(" ") || "Lesson"
+              }`,
+              time: timeStr,
+              color: "bg-blue-500",
+            };
+          });
+          setActivities(fetchedActivities);
+        } catch (err) {
+          console.error("[ParentDashboard] Activity feed sync error:", err);
+        }
+      },
+      (err) => {
+        console.error("[ParentDashboard] Activity feed listener error:", err);
       }
-    }, (err) => {
-      console.error("[ParentDashboard] Activity feed listener error:", err);
-    });
+    );
 
     return () => unsubscribe();
   }, [selectedStudentId]);
@@ -191,15 +202,16 @@ export default function ParentDashboard() {
       const studentDoc = querySnapshot.docs[0];
       const studentId = studentDoc.id;
 
-      // Ensure Parent document exists and update it
-      await setDoc(doc(db, "parents", user.uid), {
-        userId: user.uid,
-        studentIds: arrayUnion(studentId)
-      }, { merge: true });
+      // Upsert the parent document with this student ID added
+      await setDoc(
+        doc(db, "parents", user.uid),
+        { userId: user.uid, studentIds: arrayUnion(studentId) },
+        { merge: true }
+      );
 
-      // Update Student document with parent link
+      // Link the student document back to this parent
       await updateDoc(doc(db, "students", studentId), {
-        parentIds: arrayUnion(user.uid)
+        parentIds: arrayUnion(user.uid),
       });
 
       setStudyCode("");
@@ -212,195 +224,236 @@ export default function ParentDashboard() {
     }
   };
 
-  if (loading) return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center">
-      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      <p className="mt-4 text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Portal...</p>
-    </div>
-  );
+  // ── RENDER ────────────────────────────────────────────────────────────────
 
-  const selectedStudent = linkedStudents.find(s => s.userId === selectedStudentId);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <div className="relative">
+          <div className="w-14 h-14 border-[3px] border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="absolute inset-0 w-14 h-14 border-[3px] border-transparent border-b-violet-500/30 rounded-full animate-spin [animation-direction:reverse] [animation-duration:1.5s]" />
+        </div>
+        <p className="mt-5 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 animate-pulse">
+          Syncing Portal...
+        </p>
+      </div>
+    );
+  }
+
+  const selectedStudent = linkedStudents.find((s) => s.userId === selectedStudentId);
 
   return (
-    <div className="container mx-auto p-4 md:p-8 animate-premium-slide">
-      {/* Premium Header */}
-      <div className="welcome-banner mb-10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="min-h-screen bg-slate-50/50 pb-12">
+      {/* Background glow */}
+      <div className="absolute top-0 inset-x-0 h-80 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
+
+      <div className="relative container mx-auto p-6 md:p-10 max-w-7xl animate-premium-slide">
+
+        {/* ── Page Header ── */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
           <div>
-            <h1 className="text-3xl font-black italic tracking-tighter mb-2">Parent Portal</h1>
-            <p className="opacity-80 font-medium">Real-time visibility into your child&apos;s academic journey.</p>
+            <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100/60">
+              Overview Panel
+            </span>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight mt-2">Parent Portal</h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Real-time visibility into your child&apos;s academic journey.
+            </p>
           </div>
 
           {linkedStudents.length > 0 && (
-            <div className="flex items-center gap-3 bg-white/10 p-1.5 rounded-2xl backdrop-blur-md">
-              {linkedStudents.map(student => (
+            <div className="flex items-center gap-2 bg-slate-100/60 p-1.5 rounded-2xl border border-slate-100/30">
+              {linkedStudents.map((student) => (
                 <button
                   key={student.userId}
                   onClick={() => setSelectedChildId(student.userId)}
-                  className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                  className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
                     selectedStudentId === student.userId
-                      ? "bg-white text-primary shadow-lg"
-                      : "text-white/60 hover:bg-white/5"
+                      ? "bg-white text-indigo-600 shadow-sm border border-slate-100/50"
+                      : "text-slate-500 hover:text-slate-900"
                   }`}
                 >
-                  {student.displayName?.split(' ')[0] || "Student"}
+                  {student.displayName?.split(" ")[0] || "Student"}
                 </button>
               ))}
               <button
-                onClick={() => { setStudyCode(""); setLinkedStudents([]); }}
-                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-white/10 transition-colors text-white"
+                onClick={() => {
+                  setStudyCode("");
+                  setLinkedStudents([]);
+                }}
+                className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-slate-200/50 text-slate-400 transition-colors"
+                title="Add Another Child"
               >
-                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="3" fill="none">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="3" fill="none">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
               </button>
             </div>
           )}
         </div>
-      </div>
 
-      {linkedStudents.length === 0 ? (
-        <div className="max-w-md mx-auto glass-panel p-10 text-center">
-          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8 text-primary rotate-3">
-            <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" strokeWidth="2" fill="none">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <line x1="19" y1="8" x2="19" y2="14" />
-              <line x1="22" y1="11" x2="16" y2="11" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-black mb-3">Link Your Child</h2>
-          <p className="text-muted-foreground font-medium mb-10 leading-relaxed">
-            Enter the Study Code from your child&apos;s student dashboard to start tracking their progress.
-          </p>
-
-          <form onSubmit={handleLinkStudent} className="space-y-6">
-            <div className="space-y-2">
-              <input
-                value={studyCode}
-                onChange={(e) => setStudyCode(e.target.value)}
-                placeholder="TRV-2A9"
-                className="w-full px-4 py-5 rounded-2xl border-2 text-center font-mono text-2xl font-black tracking-widest focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all bg-background text-foreground"
-                maxLength={7}
-              />
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">6-Character Study Code</p>
+        {/* ── No children linked yet → show link form ── */}
+        {linkedStudents.length === 0 ? (
+          <div className="max-w-[480px] mx-auto bg-white border border-slate-100 rounded-[32px] shadow-[0_20px_50px_rgba(79,70,229,0.04)] p-10 text-center">
+            <div className="w-16 h-16 bg-indigo-600/5 rounded-2xl flex items-center justify-center mx-auto mb-6 text-indigo-600">
+              <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" strokeWidth="2" fill="none">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
             </div>
-            {error && <p className="text-sm font-bold text-destructive bg-destructive/10 py-2 rounded-lg">{error}</p>}
-            <button
-              type="submit"
-              disabled={linking || !studyCode}
-              className="btn btn-primary w-full py-4 text-lg uppercase tracking-tighter italic"
-            >
-              {linking ? "Linking..." : "Link Student Account"}
-            </button>
-          </form>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {selectedStudent && (
-            <>
-              {/* Top Stats Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 {/* Subject Grades */}
-                 <div className="glass-panel flex flex-col justify-between">
-                  <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-8">Current Grades</h3>
-                  <div className="space-y-6">
-                    {Object.entries(selectedStudent.predictedGrades || { "No Subjects": "N/A" }).map(([subject, grade]) => (
-                      <div key={subject} className="flex justify-between items-center border-b border-muted pb-3 last:border-0">
-                        <span className="font-bold text-sm text-foreground uppercase tracking-tight">{subject.split('_')[0]}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl font-black text-primary italic">{grade}</span>
-                          <span className={`dash-tag tag-success`}>↑</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <h2 className="text-2xl font-black text-slate-950 mb-2">Link Your Child</h2>
+            <p className="text-sm font-medium text-slate-400 mb-8 leading-relaxed">
+              Enter the unique 6-character Study Code from your child&apos;s dashboard to track their learning progress.
+            </p>
 
-                {/* Guarantee Progress */}
-                <div className="md:col-span-2 bg-primary text-primary-foreground rounded-3xl p-8 shadow-xl shadow-primary/20 flex flex-col justify-between relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
-                  <div className="flex justify-between items-start mb-8 relative z-10">
-                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-widest opacity-70 mb-2">80% Result Guarantee</h3>
-                      <p className="text-5xl font-black italic tracking-tighter">67%</p>
-                    </div>
-                    <div className="bg-white/15 p-3 rounded-2xl backdrop-blur-md border border-white/10">
-                      <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" strokeWidth="2.5" fill="none">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="space-y-4 relative z-10">
-                    <div className="w-full h-4 bg-white/20 rounded-full overflow-hidden border border-white/10">
-                      <div className="h-full bg-white rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(255,255,255,0.5)]" style={{ width: "67%" }}></div>
-                    </div>
-                    <p className="text-sm font-bold opacity-90 leading-relaxed max-w-md">
-                      {selectedStudent.displayName?.split(' ')[0]} is on track! Complete 13% more tasks to activate the 80% score guarantee.
-                    </p>
-                  </div>
-                </div>
+            <form onSubmit={handleLinkStudent} className="space-y-6">
+              <div className="space-y-2">
+                <input
+                  value={studyCode}
+                  onChange={(e) => setStudyCode(e.target.value)}
+                  placeholder="ABC-123"
+                  className="w-full h-16 rounded-2xl border border-slate-100 bg-slate-50/50 text-center font-mono text-2xl font-black tracking-widest focus:border-indigo-500 focus:bg-white focus:outline-none transition-all text-slate-800"
+                  maxLength={7}
+                />
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Study Code</p>
               </div>
-
-              {/* Action Sections */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Needs Attention */}
-                <div className="glass-panel border-l-4 border-l-orange-500">
-                  <div className="flex items-center gap-3 mb-8">
-                    <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center shadow-inner">
-                      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2.5" fill="none">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                      </svg>
+              {error && (
+                <p className="text-sm font-bold text-red-600 bg-red-50 py-2.5 rounded-xl border border-red-100/50">
+                  {error}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={linking || !studyCode}
+                className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-lg shadow-slate-900/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+              >
+                {linking ? "Linking..." : "Link Student Account"}
+              </button>
+            </form>
+          </div>
+        ) : (
+          /* ── Children linked → show dashboard ── */
+          <div className="space-y-10">
+            {selectedStudent && (
+              <>
+                {/* Top Stats Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Subject Grades */}
+                  <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-[0_15px_30px_rgba(0,0,0,0.01)] flex flex-col justify-between">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Subject Grades</h3>
+                    <div className="space-y-4">
+                      {Object.entries(selectedStudent.predictedGrades || { "No Subjects": "N/A" }).map(([subject, grade]) => (
+                        <div key={subject} className="flex justify-between items-center border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+                          <span className="font-extrabold text-sm text-slate-800 uppercase tracking-tight">
+                            {subject.split("_")[0]}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-black text-indigo-600">{grade}</span>
+                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">↑</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <h3 className="text-xl font-black italic uppercase tracking-tighter">Needs Attention</h3>
                   </div>
 
-                  <div className="space-y-4">
-                    {[
-                      { topic: "Organic Chemistry", subject: "Chemistry", score: "34%", trend: "down" },
-                      { topic: "Calculus Basics", subject: "Mathematics", score: "42%", trend: "up" }
-                    ].map((item, i) => (
-                      <div key={i} className="p-5 bg-muted/30 rounded-2xl flex justify-between items-center border border-transparent hover:border-muted-foreground/10 transition-all group">
-                        <div>
-                          <p className="font-bold text-sm group-hover:text-primary transition-colors">{item.topic}</p>
-                          <p className="text-[10px] font-black uppercase text-muted-foreground">{item.subject}</p>
-                        </div>
-                        <div className="text-right">
-                           <span className="text-orange-600 font-black block text-lg">{item.score}</span>
-                           <span className="text-[8px] font-black uppercase text-muted-foreground">Mastery Level</span>
-                        </div>
+                  {/* Guarantee Progress */}
+                  <div className="lg:col-span-2 bg-slate-900 text-white rounded-[32px] p-8 shadow-xl shadow-slate-900/10 flex flex-col justify-between relative overflow-hidden">
+                    <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-gradient-to-tr from-indigo-600/30 to-purple-600/10 blur-[60px] pointer-events-none" />
+
+                    <div className="flex justify-between items-start mb-6 relative z-10">
+                      <div>
+                        <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-white/10 text-indigo-300 rounded-full border border-white/5">
+                          Score Guarantee Target
+                        </span>
+                        <p className="text-3xl font-extrabold mt-4">Syllabus coverage is at 67%</p>
                       </div>
-                    ))}
+                      <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-md">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2.5" fill="none">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 relative z-10 mt-6">
+                      <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ width: "67%" }} />
+                      </div>
+                      <p className="text-xs font-medium text-slate-300">
+                        {selectedStudent.displayName?.split(" ")[0]} needs 13% more syllabus coverage to unlock the refund policy guarantee.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Activity Section */}
-                <div className="glass-panel">
-                  <div className="flex justify-between items-start mb-8">
-                    <h3 className="text-xl font-black italic uppercase tracking-tighter">Weekly Activity</h3>
-                    <button className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">View All Reports</button>
-                  </div>
-                  <div className="space-y-6">
-                    {activities.length > 0 ? activities.map((act, i) => (
-                      <div key={act.id} className="flex gap-6 items-start relative pb-6 last:pb-0">
-                        {i < activities.length - 1 && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-muted"></div>}
-                        <div className={`w-4 h-4 rounded-full mt-1.5 z-10 border-4 border-background ${act.color}`}></div>
-                        <div>
-                          <p className="text-sm font-bold leading-none mb-1">{act.title}</p>
-                          <p className="text-[10px] font-black uppercase text-muted-foreground">{act.time}</p>
-                        </div>
+                {/* Action Sections */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Needs Focus */}
+                  <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-[0_15px_30px_rgba(0,0,0,0.01)]">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-orange-500/5 text-orange-600 flex items-center justify-center border border-orange-500/10">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2.5" fill="none">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
                       </div>
-                    )) : (
-                      <p className="text-sm text-muted-foreground italic">No recent activity recorded.</p>
-                    )}
+                      <h3 className="text-lg font-black text-slate-800">Needs Focus</h3>
+                    </div>
+
+                    <div className="space-y-4">
+                      {[
+                        { topic: "Organic Chemistry", subject: "Chemistry", score: "34%" },
+                        { topic: "Calculus Basics", subject: "Mathematics", score: "42%" },
+                      ].map((item, i) => (
+                        <div key={i} className="p-4 bg-slate-50/50 hover:bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100/50 transition-all duration-200">
+                          <div>
+                            <p className="font-extrabold text-sm text-slate-800">{item.topic}</p>
+                            <p className="text-[10px] font-black uppercase text-slate-400 mt-0.5">{item.subject}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-orange-600 font-black text-base">{item.score}</span>
+                            <span className="text-[8px] font-bold uppercase text-slate-400 block">Mastery</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Weekly Activity */}
+                  <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-[0_15px_30px_rgba(0,0,0,0.01)]">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-lg font-black text-slate-800">Weekly Activity</h3>
+                      <button className="text-[10px] font-bold text-indigo-600 hover:underline">Full Report</button>
+                    </div>
+                    <div className="space-y-5">
+                      {activities.length > 0 ? (
+                        activities.map((act, i) => (
+                          <div key={act.id} className="flex gap-4 items-start relative pb-4 last:pb-0">
+                            {i < activities.length - 1 && (
+                              <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-slate-100" />
+                            )}
+                            <div className={`w-3.5 h-3.5 rounded-full mt-1 z-10 border-2 border-white ${act.color}`} />
+                            <div>
+                              <p className="text-sm font-extrabold text-slate-800 leading-tight">{act.title}</p>
+                              <p className="text-[10px] font-bold text-slate-400 mt-0.5">{act.time}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">No recent activity recorded.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
+              </>
+            )}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }

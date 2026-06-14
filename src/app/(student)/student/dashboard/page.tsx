@@ -90,156 +90,193 @@ export default function StudentDashboard() {
   const guaranteeProgress = studentData ? 45 : 0; // TODO: Calculate this from studentData
 
   return (
-    <div className="container mx-auto p-4 md:p-8 animate-premium-slide">
-      {/* Top Section: Greeting & Goal */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-1">Hello, {studentName}! 👋</h1>
-          <div className="flex items-center gap-3">
-            <p className="text-muted-foreground font-medium">Ready to reach your 80% goal today?</p>
-            {studentData?.studyCode && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full border text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                <span className="opacity-60">Code:</span>
-                <span className="text-foreground">{studentData.studyCode}</span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="bg-card border p-4 rounded-2xl flex items-center gap-4 shadow-sm min-w-[240px]">
-          <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary flex items-center justify-center text-primary font-bold">
-            2/5
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Daily Goal</p>
-            <p className="font-bold text-sm">2 of 5 lessons done</p>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-slate-50/50 pb-12">
+      {/* Decorative top blurred background glow */}
+      <div className="absolute top-0 inset-x-0 h-80 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
 
-      {/* Main Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        {/* Predicted Grade Tracker */}
-        <div className="bg-card border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+      <div className="relative container mx-auto p-6 md:p-10 max-w-7xl animate-premium-slide">
+        {/* Top Header Section */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
           <div>
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Predicted Grade</h3>
-            <div className="flex items-baseline gap-2">
-              <span className="text-6xl font-black text-primary">{overallGrade}</span>
-              <span className="text-green-500 font-bold flex items-center text-sm">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="3" fill="none">
-                  <polyline points="18 15 12 9 6 15" />
-                </svg>
-                Up from C
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100/60">
+                Student Profile
               </span>
+              {studentData?.studyCode && (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
+                  <span className="opacity-60">Code:</span>
+                  <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
+                </div>
+              )}
             </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
-            Based on your last 14 days of activity and diagnostic results.
-          </p>
-        </div>
-
-        {/* Guarantee Progress Bar */}
-        <div className="md:col-span-2 bg-primary text-primary-foreground rounded-2xl p-6 shadow-lg shadow-primary/20 flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-widest opacity-80 mb-1">Pass Guarantee</h3>
-              <p className="text-2xl font-bold">You&apos;re {guaranteeProgress}% of the way there</p>
-            </div>
-            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="w-full h-3 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-white rounded-full transition-all duration-1000"
-                style={{ width: `${guaranteeProgress}%` }}
-              ></div>
-            </div>
-            <p className="text-xs font-medium opacity-90">
-              Reach 80% to activate your &quot;Score 80 or Refund&quot; guarantee.
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">
+              Hello, {studentName}! 👋
+            </h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Here is your learning summary. Ready to reach your 80% goal today?
             </p>
           </div>
-        </div>
-      </div>
 
-      {/* Subject Cards Grid */}
-      <h2 className="text-xl font-bold mb-6">Your Subjects</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        {subjects.map((subject) => (
-          <div key={subject.id} className="bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
-            <div className="h-2" style={{ backgroundColor: subject.color }}></div>
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-bold text-lg">{subject.name}</h3>
-                  <p className="text-sm text-muted-foreground font-medium">{subject.code} Curriculum</p>
-                </div>
-                <span className="text-2xl font-black" style={{ color: subject.color }}>{subject.grade}</span>
-              </div>
-
-              <div className="mb-6">
-                <div className="flex justify-between text-xs font-bold mb-1.5 uppercase tracking-wider text-muted-foreground">
-                  <span>Syllabus Covered</span>
-                  <span>{subject.progress}%</span>
-                </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${subject.progress}%`, backgroundColor: subject.color }}
-                  ></div>
-                </div>
-              </div>
-
-              <Link
-                href={`/student/learn/${subject.id}`}
-                className="flex items-center justify-center w-full py-3 rounded-xl font-bold border-2 transition-all hover:bg-muted group-active:scale-[0.98]"
-                style={{ borderColor: subject.color, color: subject.color }}
-              >
-                Continue Studying
-              </Link>
+          {/* Daily Goal Status Banner */}
+          <div className="bg-white border border-slate-100 p-5 rounded-[24px] flex items-center gap-4 shadow-[0_10px_30px_rgba(0,0,0,0.02)] min-w-[280px]">
+            <div className="relative w-12 h-12 flex items-center justify-center">
+              <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <path className="text-slate-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path className="text-indigo-600" strokeDasharray="40, 100" strokeWidth="3" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <span className="text-xs font-black text-slate-800">2/5</span>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Daily Study Goal</p>
+              <p className="font-extrabold text-sm text-slate-800">2 of 5 lessons completed</p>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Bottom Actions */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <Link
-          href="/student/practice"
-          className="flex-1 bg-card border-2 border-dashed rounded-2xl p-6 flex items-center gap-4 hover:border-primary hover:bg-primary/5 transition-all"
-        >
-          <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <polyline points="10 9 9 9 8 9" />
-            </svg>
+        {/* Highlight Stats Panels */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          {/* Predicted Grade Tracker Card */}
+          <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-[0_20px_40px_rgba(0,0,0,0.02)] flex flex-col justify-between relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/30 rounded-bl-[120px] transition-colors group-hover:bg-indigo-50/50" />
+            <div className="relative">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Predicted overall Grade</h3>
+              <div className="flex items-baseline gap-3">
+                <span className="text-7xl font-black text-indigo-600 tracking-tighter">{overallGrade}</span>
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-extrabold rounded-xl text-xs flex items-center gap-1 border border-emerald-100/50">
+                  <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" strokeWidth="3" fill="none">
+                    <polyline points="18 15 12 9 6 15" />
+                  </svg>
+                  Up from C
+                </span>
+              </div>
+            </div>
+            <p className="text-xs font-medium text-slate-400 mt-8 leading-relaxed">
+              Based on your ongoing practice exams, lesson quizzes, and diagnostic history.
+            </p>
           </div>
-          <div>
-            <p className="font-bold">Past Paper Practice</p>
-            <p className="text-sm text-muted-foreground">Test yourself with real UNEB questions.</p>
-          </div>
-        </Link>
 
-        <Link
-          href="/student/tutor"
-          className="flex-1 bg-card border-2 border-dashed rounded-2xl p-6 flex items-center gap-4 hover:border-primary hover:bg-primary/5 transition-all"
-        >
-          <div className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
+          {/* Refund pass guarantee Card */}
+          <div className="lg:col-span-2 bg-slate-900 text-white rounded-[32px] p-8 shadow-xl shadow-slate-900/10 flex flex-col justify-between relative overflow-hidden group">
+            {/* Visual gradient orb */}
+            <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-gradient-to-tr from-indigo-600/30 to-purple-600/10 blur-[60px] pointer-events-none" />
+            
+            <div className="flex justify-between items-start mb-6 relative z-10">
+              <div>
+                <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-white/10 text-indigo-300 rounded-full border border-white/5">
+                  Secure Score Guarantee
+                </span>
+                <p className="text-3xl font-extrabold tracking-tight mt-4 text-white">Your goal is {guaranteeProgress}% complete</p>
+              </div>
+              <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-md">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="space-y-4 relative z-10 mt-6">
+              <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-indigo-500 rounded-full transition-all duration-1000"
+                  style={{ width: `${guaranteeProgress}%` }}
+                ></div>
+              </div>
+              <p className="text-xs font-medium text-slate-300">
+                Maintain 80% syllabus progress to unlock the score guarantee.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-bold">AI Study Tutor</p>
-            <p className="text-sm text-muted-foreground">Ask anything about your subjects.</p>
+        </div>
+
+        {/* Subjects List section */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Your Subject Portals</h2>
+            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
+              {subjects.length} active courses
+            </span>
           </div>
-        </Link>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {subjects.map((subject) => (
+              <div key={subject.id} className="bg-white border border-slate-100 rounded-[32px] overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_25px_50px_rgba(0,0,0,0.03)] transition-all duration-300 hover:translate-y-[-4px] group flex flex-col justify-between">
+                <div className="p-8">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        {subject.code} Level
+                      </span>
+                      <h3 className="font-black text-2xl text-slate-800 mt-1">{subject.name}</h3>
+                    </div>
+                    <span className="text-3xl font-black" style={{ color: subject.color }}>
+                      {subject.grade}
+                    </span>
+                  </div>
+
+                  <div className="mb-8">
+                    <div className="flex justify-between text-xs font-bold mb-2 uppercase tracking-wider text-slate-400">
+                      <span>Syllabus Covered</span>
+                      <span className="text-slate-700">{subject.progress}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-1000"
+                        style={{ width: `${subject.progress}%`, backgroundColor: subject.color }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-8 pb-8">
+                  <Link
+                    href={`/student/learn/${subject.id}`}
+                    className="flex items-center justify-center w-full h-12 rounded-2xl font-bold border-2 transition-all hover:bg-slate-50 group-active:scale-[0.98]"
+                    style={{ borderColor: subject.color, color: subject.color }}
+                  >
+                    Continue Studying
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Lower layout widgets */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Link
+            href="/student/practice"
+            className="group relative bg-white border border-slate-100 rounded-[32px] p-8 flex items-center gap-6 shadow-[0_15px_30px_rgba(0,0,0,0.01)] hover:border-slate-200 transition-all hover:translate-y-[-2px]"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-orange-500/5 text-orange-600 flex items-center justify-center shrink-0 border border-orange-500/10">
+              <svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" strokeWidth="2" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-extrabold text-slate-800 text-lg">Past Paper Prep & Quizzes</p>
+              <p className="text-sm text-slate-400 mt-1 font-medium">Challenge yourself using authentic national UNEB revision items.</p>
+            </div>
+          </Link>
+
+          <Link
+            href="/student/tutor"
+            className="group relative bg-white border border-slate-100 rounded-[32px] p-8 flex items-center gap-6 shadow-[0_15px_30px_rgba(0,0,0,0.01)] hover:border-slate-200 transition-all hover:translate-y-[-2px]"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-indigo-500/5 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-500/10">
+              <svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" strokeWidth="2" fill="none">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-extrabold text-slate-800 text-lg">Ask our AI Study Buddy</p>
+              <p className="text-sm text-slate-400 mt-1 font-medium">Unblock complex concepts with automated step-by-step solutions.</p>
+            </div>
+          </Link>
+        </div>
       </div>
     </div>
   );
