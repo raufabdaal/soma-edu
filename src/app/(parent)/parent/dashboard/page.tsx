@@ -7,14 +7,25 @@ import {
   collection,
   query,
   where,
-  getDocs,
   doc,
   setDoc,
   updateDoc,
   arrayUnion,
-  getDoc
+  getDoc,
+  onSnapshot,
+  orderBy,
+  limit as firestoreLimit,
+  getDocs
 } from "firebase/firestore";
 import { Student, User } from "@/types";
+
+interface Activity {
+  id: string;
+  type: "Lesson" | "Practice" | "Tutor";
+  title: string;
+  time: string;
+  color: string;
+}
 
 export default function ParentDashboard() {
   const { user } = useAuth();
@@ -24,42 +35,78 @@ export default function ParentDashboard() {
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedStudentId, setSelectedChildId] = useState<string | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
-    const fetchLinkedStudents = async () => {
-      if (!user) return;
-      try {
-        const parentRef = doc(db, "parents", user.uid);
-        const parentSnap = await getDoc(parentRef);
+    if (!user) return;
 
-        if (parentSnap.exists()) {
-          const studentIds = parentSnap.data().studentIds || [];
-          const students: (Student & { displayName?: string })[] = [];
+    // Use onSnapshot for real-time updates when a student is linked
+    const parentRef = doc(db, "parents", user.uid);
+    const unsubscribe = onSnapshot(parentRef, async (parentSnap) => {
+      if (parentSnap.exists()) {
+        const studentIds = parentSnap.data().studentIds || [];
+        const students: (Student & { displayName?: string })[] = [];
 
-          for (const id of studentIds) {
-            const sSnap = await getDoc(doc(db, "students", id));
-            const uSnap = await getDoc(doc(db, "users", id));
+        for (const id of studentIds) {
+          const sSnap = await getDoc(doc(db, "students", id));
+          const uSnap = await getDoc(doc(db, "users", id));
 
-            if (sSnap.exists()) {
-              const sData = sSnap.data() as Student;
-              const uData = uSnap.exists() ? uSnap.data() as User : null;
-              students.push({ ...sData, displayName: uData?.displayName });
-            }
-          }
-          setLinkedStudents(students);
-          if (students.length > 0 && !selectedStudentId) {
-            setSelectedChildId(students[0].userId);
+          if (sSnap.exists()) {
+            const sData = sSnap.data() as Student;
+            const uData = uSnap.exists() ? uSnap.data() as User : null;
+            students.push({ ...sData, displayName: uData?.displayName });
           }
         }
-      } catch (err) {
-        console.error("Error fetching students:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchLinkedStudents();
+        setLinkedStudents(students);
+
+        // Auto-select the first student if none selected
+        if (students.length > 0 && !selectedStudentId) {
+          setSelectedChildId(students[0].userId);
+        }
+      }
+      setLoading(false);
+    }, (err) => {
+      console.error("Parent snapshot error:", err);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user, selectedStudentId]);
+
+  useEffect(() => {
+    if (!selectedStudentId) return;
+
+    // Fetch real activity feed for selected student
+    const progressRef = collection(db, "students", selectedStudentId, "progress");
+    const q = query(progressRef, orderBy("completedAt", "desc"), firestoreLimit(5));
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const fetchedActivities: Activity[] = snap.docs.map(doc => {
+        const data = doc.data();
+        const date = data.completedAt?.toDate() || new Date();
+        const timeAgo = Math.floor((new Date().getTime() - date.getTime()) / 60000);
+
+        let timeStr = "Just now";
+        if (timeAgo >= 1440) timeStr = `${Math.floor(timeAgo/1440)} days ago`;
+        else if (timeAgo >= 60) timeStr = `${Math.floor(timeAgo/60)} hours ago`;
+        else if (timeAgo > 0) timeStr = `${timeAgo} mins ago`;
+
+        return {
+          id: doc.id,
+          type: "Lesson",
+          title: `Finished: ${data.lessonId?.split('_').map((w:string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || "Lesson"}`,
+          time: timeStr,
+          color: "bg-blue-500"
+        };
+      });
+      setActivities(fetchedActivities);
+    }, (err) => {
+      console.error("Activity feed error:", err);
+    });
+
+    return () => unsubscribe();
+  }, [selectedStudentId]);
 
   const handleLinkStudent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,20 +316,18 @@ export default function ParentDashboard() {
                     <button className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">View All Reports</button>
                   </div>
                   <div className="space-y-6">
-                    {[
-                      { type: "Lesson", title: "Finished: Acids & Bases", time: "2 hours ago", color: "bg-blue-500" },
-                      { type: "Practice", title: "Attempted: Biology 2023 Paper", time: "Yesterday", color: "bg-green-500" },
-                      { type: "Tutor", title: "Asked 4 questions in AI Tutor", time: "2 days ago", color: "bg-violet-500" }
-                    ].map((act, i) => (
-                      <div key={i} className="flex gap-6 items-start relative pb-6 last:pb-0">
-                        {i < 2 && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-muted"></div>}
+                    {activities.length > 0 ? activities.map((act, i) => (
+                      <div key={act.id} className="flex gap-6 items-start relative pb-6 last:pb-0">
+                        {i < activities.length - 1 && <div className="absolute left-[7px] top-4 bottom-0 w-[2px] bg-muted"></div>}
                         <div className={`w-4 h-4 rounded-full mt-1.5 z-10 border-4 border-background ${act.color}`}></div>
                         <div>
                           <p className="text-sm font-bold leading-none mb-1">{act.title}</p>
                           <p className="text-[10px] font-black uppercase text-muted-foreground">{act.time}</p>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <p className="text-sm text-muted-foreground italic">No recent activity recorded.</p>
+                    )}
                   </div>
                 </div>
               </div>
