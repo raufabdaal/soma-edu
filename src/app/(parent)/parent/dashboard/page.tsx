@@ -37,72 +37,117 @@ export default function ParentDashboard() {
   const [selectedStudentId, setSelectedChildId] = useState<string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
 
+  // 1. Listen to Parent Profile & Linked Students
   useEffect(() => {
     if (!user) return;
 
-    // Use onSnapshot for real-time updates when a student is linked
+    console.log("[ParentDashboard] Setting up parent document listener");
     const parentRef = doc(db, "parents", user.uid);
+
+    let synced = false;
+
     const unsubscribe = onSnapshot(parentRef, async (parentSnap) => {
-      if (parentSnap.exists()) {
-        const studentIds = parentSnap.data().studentIds || [];
-        const students: (Student & { displayName?: string })[] = [];
+      try {
+        if (parentSnap.exists()) {
+          const studentIds = (parentSnap.data().studentIds || []) as string[];
+          console.log("[ParentDashboard] Linked student IDs:", studentIds);
 
-        for (const id of studentIds) {
-          const sSnap = await getDoc(doc(db, "students", id));
-          const uSnap = await getDoc(doc(db, "users", id));
+          const students: (Student & { displayName?: string })[] = [];
 
-          if (sSnap.exists()) {
-            const sData = sSnap.data() as Student;
-            const uData = uSnap.exists() ? uSnap.data() as User : null;
-            students.push({ ...sData, displayName: uData?.displayName });
+          if (studentIds.length > 0) {
+            for (const id of studentIds) {
+              try {
+                const sSnap = await getDoc(doc(db, "students", id));
+                const uSnap = await getDoc(doc(db, "users", id));
+
+                if (sSnap.exists()) {
+                  const sData = sSnap.data() as Student;
+                  const uData = uSnap.exists() ? uSnap.data() as User : null;
+                  students.push({ ...sData, displayName: uData?.displayName });
+                }
+              } catch (fetchErr) {
+                console.error(`[ParentDashboard] Error fetching student ${id}:`, fetchErr);
+              }
+            }
           }
-        }
 
-        setLinkedStudents(students);
+          setLinkedStudents(students);
 
-        // Auto-select the first student if none selected
-        if (students.length > 0 && !selectedStudentId) {
-          setSelectedChildId(students[0].userId);
+          // Auto-select first child if none selected or if selected is not in the list
+          if (students.length > 0) {
+            setSelectedChildId(prev => {
+              if (!prev || !students.find(s => s.userId === prev)) {
+                return students[0].userId;
+              }
+              return prev;
+            });
+          }
+        } else {
+          console.log("[ParentDashboard] No parent document found");
+          setLinkedStudents([]);
         }
+      } catch (err) {
+        console.error("[ParentDashboard] Error in snapshot processing:", err);
+      } finally {
+        setLoading(false);
+        synced = true;
       }
-      setLoading(false);
     }, (err) => {
-      console.error("Parent snapshot error:", err);
+      console.error("[ParentDashboard] Parent snapshot listener error:", err);
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [user, selectedStudentId]);
+    // Emergency fallback to stop the syncing spinner
+    const timer = setTimeout(() => {
+      if (!synced) {
+        console.warn("[ParentDashboard] Sync timeout reached");
+        setLoading(false);
+      }
+    }, 5000);
 
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
+  }, [user?.uid]);
+
+  // 2. Listen to Activity Feed for Selected Student
   useEffect(() => {
-    if (!selectedStudentId) return;
+    if (!selectedStudentId) {
+      setActivities([]);
+      return;
+    }
 
-    // Fetch real activity feed for selected student
+    console.log("[ParentDashboard] Setting up activity listener for student:", selectedStudentId);
     const progressRef = collection(db, "students", selectedStudentId, "progress");
     const q = query(progressRef, orderBy("completedAt", "desc"), firestoreLimit(5));
 
     const unsubscribe = onSnapshot(q, (snap) => {
-      const fetchedActivities: Activity[] = snap.docs.map(doc => {
-        const data = doc.data();
-        const date = data.completedAt?.toDate() || new Date();
-        const timeAgo = Math.floor((new Date().getTime() - date.getTime()) / 60000);
+      try {
+        const fetchedActivities: Activity[] = snap.docs.map(doc => {
+          const data = doc.data();
+          const date = data.completedAt?.toDate() || new Date();
+          const timeAgo = Math.floor((new Date().getTime() - date.getTime()) / 60000);
 
-        let timeStr = "Just now";
-        if (timeAgo >= 1440) timeStr = `${Math.floor(timeAgo/1440)} days ago`;
-        else if (timeAgo >= 60) timeStr = `${Math.floor(timeAgo/60)} hours ago`;
-        else if (timeAgo > 0) timeStr = `${timeAgo} mins ago`;
+          let timeStr = "Just now";
+          if (timeAgo >= 1440) timeStr = `${Math.floor(timeAgo/1440)} days ago`;
+          else if (timeAgo >= 60) timeStr = `${Math.floor(timeAgo/60)} hours ago`;
+          else if (timeAgo > 0) timeStr = `${timeAgo} mins ago`;
 
-        return {
-          id: doc.id,
-          type: "Lesson",
-          title: `Finished: ${data.lessonId?.split('_').map((w:string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || "Lesson"}`,
-          time: timeStr,
-          color: "bg-blue-500"
-        };
-      });
-      setActivities(fetchedActivities);
+          return {
+            id: doc.id,
+            type: "Lesson",
+            title: `Finished: ${data.lessonId?.split('_').map((w:string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || "Lesson"}`,
+            time: timeStr,
+            color: "bg-blue-500"
+          };
+        });
+        setActivities(fetchedActivities);
+      } catch (err) {
+        console.error("[ParentDashboard] Activity feed sync error:", err);
+      }
     }, (err) => {
-      console.error("Activity feed error:", err);
+      console.error("[ParentDashboard] Activity feed listener error:", err);
     });
 
     return () => unsubscribe();
@@ -115,11 +160,12 @@ export default function ParentDashboard() {
     setError(null);
 
     try {
-      const q = query(collection(db, "students"), where("studyCode", "==", studyCode.toUpperCase()));
+      const q = query(collection(db, "students"), where("studyCode", "==", studyCode.toUpperCase().trim()));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
         setError("Invalid Study Code. Please check and try again.");
+        setLinking(false);
         return;
       }
 
@@ -140,8 +186,8 @@ export default function ParentDashboard() {
       setStudyCode("");
       setSelectedChildId(studentId);
     } catch (err) {
-      console.error("Linking error:", err);
-      setError("An error occurred while linking the account.");
+      console.error("[ParentDashboard] Linking error:", err);
+      setError("An error occurred while linking the account. Please check your connection.");
     } finally {
       setLinking(false);
     }
@@ -215,13 +261,14 @@ export default function ParentDashboard() {
                 value={studyCode}
                 onChange={(e) => setStudyCode(e.target.value)}
                 placeholder="TRV-2A9"
-                className="w-full px-4 py-5 rounded-2xl border-2 text-center font-mono text-2xl font-black tracking-widest focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all bg-background"
+                className="w-full px-4 py-5 rounded-2xl border-2 text-center font-mono text-2xl font-black tracking-widest focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all bg-background text-foreground"
                 maxLength={7}
               />
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">6-Character Study Code</p>
             </div>
             {error && <p className="text-sm font-bold text-destructive bg-destructive/10 py-2 rounded-lg">{error}</p>}
             <button
+              type="submit"
               disabled={linking || !studyCode}
               className="btn btn-primary w-full py-4 text-lg uppercase tracking-tighter italic"
             >
@@ -309,7 +356,7 @@ export default function ParentDashboard() {
                   </div>
                 </div>
 
-                {/* Quick Reports Section */}
+                {/* Activity Section */}
                 <div className="glass-panel">
                   <div className="flex justify-between items-start mb-8">
                     <h3 className="text-xl font-black italic uppercase tracking-tighter">Weekly Activity</h3>
