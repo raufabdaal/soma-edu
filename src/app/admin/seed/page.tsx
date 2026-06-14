@@ -4,6 +4,8 @@ import { useState } from "react";
 import { db } from "@/lib/firebase/config";
 import { doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+
 
 // Detailed educational content mapping to Ugandan UNEB standard.
 // Handcrafted real subjects, topics, and lessons instead of basic templates or lorem ipsum.
@@ -471,11 +473,17 @@ const SEED_DATA = {
 
 export default function SeedPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSeed = async () => {
+    if (!user) {
+      setError("You must be logged in to import content. Please log in first.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setStatus("Initiating database seeding...");
@@ -533,6 +541,19 @@ export default function SeedPage() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-6">
+        <div className="text-center">
+          <div className="w-10 h-10 border-[3px] border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-xs font-black uppercase tracking-widest text-slate-400 animate-pulse">
+            Verifying Admin Session...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-6">
       <div className="w-full max-w-lg bg-white/80 backdrop-blur-md border border-slate-100 rounded-3xl p-8 shadow-2xl shadow-indigo-100/50">
@@ -547,6 +568,36 @@ export default function SeedPage() {
             Populate your Firebase database with authentic, premium Uganda O-Level curriculum content (Biology, Chemistry, Mathematics).
           </p>
         </div>
+
+        {/* User Session Banner */}
+        <div className="mb-6 p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between bg-slate-50 border-slate-200/50">
+          <span className="text-slate-500">Session Status:</span>
+          {user ? (
+            <span className="text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 rounded-full">
+              Logged In ({user.email})
+            </span>
+          ) : (
+            <span className="text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded-full">
+              Not Logged In
+            </span>
+          )}
+        </div>
+
+        {!user && (
+          <div className="bg-amber-50 text-amber-800 border border-amber-100 rounded-2xl p-4 mb-6 text-sm">
+            <div className="flex gap-2">
+              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <span className="font-bold">Authentication Required</span>
+                <p className="mt-1 text-xs text-amber-700 leading-relaxed font-medium">
+                  Firestore rules only allow authenticated users to populate curriculum data. Please sign in with any account first, then return here to run the import.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 text-red-700 border border-red-100 rounded-2xl p-4 mb-6 text-sm flex items-start gap-3">
@@ -572,8 +623,8 @@ export default function SeedPage() {
         <div className="space-y-4">
           <button
             onClick={handleSeed}
-            disabled={loading}
-            className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-2xl shadow-lg shadow-slate-900/10 hover:shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:pointer-events-none"
+            disabled={loading || !user}
+            className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-2xl shadow-lg shadow-slate-900/10 hover:shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-40 disabled:pointer-events-none"
           >
             {loading ? (
               <>
@@ -592,7 +643,7 @@ export default function SeedPage() {
             onClick={() => router.push("/login")}
             className="w-full h-14 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-2xl active:scale-[0.98] transition-all"
           >
-            Return to Login
+            Go to Sign In
           </button>
         </div>
 
