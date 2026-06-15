@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { getAiResponse } from "@/lib/ai/nvidia";
+import { getAiResponse } from "@/lib/ai/gemini";
 import { TUTOR_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { TopicMarkingScheme } from "@/types";
 

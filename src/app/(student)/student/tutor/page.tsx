@@ -91,9 +91,9 @@ export default function AiTutor() {
               <p className="text-xs text-slate-400 font-medium">Expert assistance for UNEB O-Level exams</p>
             </div>
             {/* Model badge */}
-            <div className="ml-auto hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 border border-violet-100/60 rounded-xl">
-              <div className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-violet-700">Gemini AI</span>
+            <div className="ml-auto hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 border border-violet-100/60 rounded-xl animate-pulse">
+              <div className="w-1.5 h-1.5 bg-violet-500 rounded-full" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-violet-700">Gemini 1.5 Flash</span>
             </div>
           </div>
 
