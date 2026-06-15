@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
+import { Copy, Check } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import Link from "next/link";
@@ -21,6 +22,13 @@ export default function StudentDashboard() {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [subjects, setSubjects] = useState<SubjectWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,9 +111,23 @@ export default function StudentDashboard() {
                 Student Profile
               </span>
               {studentData?.studyCode && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
-                  <span className="opacity-60">Code:</span>
-                  <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
+                    <span className="opacity-60">Code:</span>
+                    <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(studentData.studyCode!)}
+                    className="flex items-center justify-center p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all shadow-sm active:scale-95"
+                    aria-label="Copy study code"
+                    title="Copy study code"
+                  >
+                    {copied ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                 </div>
               )}
             </div>
