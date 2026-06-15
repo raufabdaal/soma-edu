@@ -1,5 +1,5 @@
 export const getAiResponse = async (prompt: string, systemInstruction?: string) => {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey || apiKey === "your_gemini_api_key_here") {
     throw new Error("Gemini API key is missing. Please check your environment variables.");
