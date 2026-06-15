@@ -45,7 +45,8 @@ export const getAiResponse = async (prompt: string, systemInstruction?: string) 
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey
       },
       body: JSON.stringify(requestBody),
       signal: controller.signal
