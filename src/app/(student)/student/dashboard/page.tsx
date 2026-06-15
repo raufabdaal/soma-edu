@@ -85,9 +85,23 @@ export default function StudentDashboard() {
     return <div className="p-8 text-center">Loading your dashboard...</div>;
   }
 
+
   const studentName = userProfile?.displayName?.split(" ")[0] || "Student";
-  const overallGrade = "B"; // Simplified for MVP
-  const guaranteeProgress = studentData ? 45 : 0; // TODO: Calculate this from studentData
+
+  // Derive real aggregate metrics from fetched Firestore subject progress data.
+  // We average the grade letters to get an overall grade, and cap guarantee at 100.
+  const gradeLetters = subjects.map(s => s.grade).filter(g => g && g !== "N/A");
+  const gradeOrder = ["A", "B", "C", "D", "E"];
+  const avgGradeIndex = gradeLetters.length > 0
+    ? Math.round(gradeLetters.reduce((sum, g) => sum + (gradeOrder.indexOf(g) >= 0 ? gradeOrder.indexOf(g) : 2), 0) / gradeLetters.length)
+    : 2;
+  const overallGrade = gradeOrder[Math.min(avgGradeIndex, gradeOrder.length - 1)];
+
+  // guaranteeProgress is the average across all subject progress docs, capped at 100
+  const allProgress = subjects.map(s => s.progress).filter(p => typeof p === "number");
+  const guaranteeProgress = allProgress.length > 0
+    ? Math.min(100, Math.round(allProgress.reduce((a, b) => a + b, 0) / allProgress.length))
+    : 0;
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-12">

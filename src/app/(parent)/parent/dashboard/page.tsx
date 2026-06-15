@@ -38,6 +38,10 @@ export default function ParentDashboard() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [studentIds, setStudentIds] = useState<string[]>([]);
 
+  // Stores real subject-level progress for the selected student
+  // Keyed by subjectId — e.g. { biology: { guaranteeProgress: 30, predictedGrade: 'B' } }
+  const [subjectProgress, setSubjectProgress] = useState<Record<string, { guaranteeProgress: number; predictedGrade: string }>>({});
+
   // Effect 1: Listen to parent document for linked student ID array
   useEffect(() => {
     if (!user) return;
@@ -180,6 +184,37 @@ export default function ParentDashboard() {
     );
 
     return () => unsubscribe();
+  }, [selectedStudentId]);
+
+  // Effect 4: Fetch real subject-level progress for the selected student
+  // Reads from students/{id}/progress_subjects which is written by useStudentProgress hook
+  useEffect(() => {
+    if (!selectedStudentId) {
+      setSubjectProgress({});
+      return;
+    }
+
+    const fetchSubjectProgress = async () => {
+      try {
+        const subjectsSnap = await getDocs(
+          collection(db, "students", selectedStudentId, "progress_subjects")
+        );
+        const progressMap: Record<string, { guaranteeProgress: number; predictedGrade: string }> = {};
+        subjectsSnap.docs.forEach(d => {
+          const data = d.data();
+          progressMap[d.id] = {
+            guaranteeProgress: data.guaranteeProgress || 0,
+            predictedGrade: data.predictedGrade || "N/A",
+          };
+        });
+        console.log("[ParentDashboard] Subject progress loaded:", progressMap);
+        setSubjectProgress(progressMap);
+      } catch (err) {
+        console.error("[ParentDashboard] Error fetching subject progress:", err);
+      }
+    };
+
+    fetchSubjectProgress();
   }, [selectedStudentId]);
 
   const handleLinkStudent = async (e: React.FormEvent) => {
@@ -359,38 +394,57 @@ export default function ParentDashboard() {
                     </div>
                   </div>
 
-                  {/* Guarantee Progress */}
+                  {/* Guarantee Progress — sourced from real Firestore progress_subjects data */}
                   <div className="lg:col-span-2 bg-slate-900 text-white rounded-[32px] p-8 shadow-xl shadow-slate-900/10 flex flex-col justify-between relative overflow-hidden">
                     <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-gradient-to-tr from-indigo-600/30 to-purple-600/10 blur-[60px] pointer-events-none" />
 
-                    <div className="flex justify-between items-start mb-6 relative z-10">
-                      <div>
-                        <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-white/10 text-indigo-300 rounded-full border border-white/5">
-                          Score Guarantee Target
-                        </span>
-                        <p className="text-3xl font-extrabold mt-4">Syllabus coverage is at 67%</p>
-                      </div>
-                      <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-md">
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2.5" fill="none">
-                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                        </svg>
-                      </div>
-                    </div>
+                    {/* Compute overall guarantee as average across all tracked subjects */}
+                    {(() => {
+                      const progressValues = Object.values(subjectProgress).map(p => p.guaranteeProgress);
+                      const avgProgress = progressValues.length > 0
+                        ? Math.min(100, Math.round(progressValues.reduce((a, b) => a + b, 0) / progressValues.length))
+                        : 0;
+                      const remaining = Math.max(0, 80 - avgProgress);
 
-                    <div className="space-y-4 relative z-10 mt-6">
-                      <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ width: "67%" }} />
-                      </div>
-                      <p className="text-xs font-medium text-slate-300">
-                        {selectedStudent.displayName?.split(" ")[0]} needs 13% more syllabus coverage to unlock the refund policy guarantee.
-                      </p>
-                    </div>
+                      return (
+                        <>
+                          <div className="flex justify-between items-start mb-6 relative z-10">
+                            <div>
+                              <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-white/10 text-indigo-300 rounded-full border border-white/5">
+                                Score Guarantee Target
+                              </span>
+                              <p className="text-3xl font-extrabold mt-4">
+                                {progressValues.length > 0
+                                  ? `Syllabus coverage is at ${avgProgress}%`
+                                  : "No lessons completed yet"}
+                              </p>
+                            </div>
+                            <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-md">
+                              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2.5" fill="none">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                              </svg>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4 relative z-10 mt-6">
+                            <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                              <div className="h-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ width: `${avgProgress}%` }} />
+                            </div>
+                            <p className="text-xs font-medium text-slate-300">
+                              {remaining > 0
+                                ? `${selectedStudent?.displayName?.split(" ")[0]} needs ${remaining}% more coverage to unlock the refund policy guarantee.`
+                                : `${selectedStudent?.displayName?.split(" ")[0]} has met the 80% guarantee threshold!`}
+                            </p>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
                 {/* Action Sections */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Needs Focus */}
+                  {/* Needs Focus — real low-scoring subjects derived from progress data */}
                   <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-[0_15px_30px_rgba(0,0,0,0.01)]">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-12 h-12 rounded-xl bg-orange-500/5 text-orange-600 flex items-center justify-center border border-orange-500/10">
@@ -404,21 +458,26 @@ export default function ParentDashboard() {
                     </div>
 
                     <div className="space-y-4">
-                      {[
-                        { topic: "Organic Chemistry", subject: "Chemistry", score: "34%" },
-                        { topic: "Calculus Basics", subject: "Mathematics", score: "42%" },
-                      ].map((item, i) => (
-                        <div key={i} className="p-4 bg-slate-50/50 hover:bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100/50 transition-all duration-200">
-                          <div>
-                            <p className="font-extrabold text-sm text-slate-800">{item.topic}</p>
-                            <p className="text-[10px] font-black uppercase text-slate-400 mt-0.5">{item.subject}</p>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-orange-600 font-black text-base">{item.score}</span>
-                            <span className="text-[8px] font-bold uppercase text-slate-400 block">Mastery</span>
-                          </div>
-                        </div>
-                      ))}
+                      {Object.keys(subjectProgress).length > 0 ? (
+                        Object.entries(subjectProgress)
+                          // Sort by lowest guarantee progress first — these need the most attention
+                          .sort(([, a], [, b]) => a.guaranteeProgress - b.guaranteeProgress)
+                          .slice(0, 3)
+                          .map(([subjectId, progress]) => (
+                            <div key={subjectId} className="p-4 bg-slate-50/50 hover:bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100/50 transition-all duration-200">
+                              <div>
+                                <p className="font-extrabold text-sm text-slate-800 capitalize">{subjectId}</p>
+                                <p className="text-[10px] font-black uppercase text-slate-400 mt-0.5">Predicted: {progress.predictedGrade}</p>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-orange-600 font-black text-base">{Math.min(100, progress.guaranteeProgress)}%</span>
+                                <span className="text-[8px] font-bold uppercase text-slate-400 block">Coverage</span>
+                              </div>
+                            </div>
+                          ))
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">No lesson data yet. Encourage your child to complete their first lesson.</p>
+                      )}
                     </div>
                   </div>
 

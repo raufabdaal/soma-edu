@@ -117,7 +117,7 @@ export default function TopicsPage() {
           {topics.map((topic, i) => (
             <Link
               key={topic.id}
-              href={`/student/learn/${subjectId}/${topic.id}/lesson1`}
+              href={`/student/learn/${subjectId}/${topic.id}`}
               className="group block bg-white border border-slate-100 rounded-[28px] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.03)] hover:border-slate-200 transition-all duration-300 hover:translate-y-[-2px] active:scale-[0.99]"
             >
               <div className="flex items-center gap-5">
