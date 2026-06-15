@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -35,11 +35,12 @@ export default function LessonsListPage() {
         const q = query(
           collection(db, "lessons"),
           where("topicId", "==", topicId),
-          where("isActive", "==", true),
-          orderBy("order", "asc")
+          where("isActive", "==", true)
         );
         const snap = await getDocs(q);
-        const data = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Lesson));
+        const data = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() } as Lesson))
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
         console.log("[LessonsListPage] Fetched lessons:", data.length, data.map(l => l.id));
         setLessons(data);
       } catch (err) {

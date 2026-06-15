@@ -18,11 +18,12 @@ export default function TopicsPage() {
         const q = query(
           collection(db, "topics"),
           where("subjectId", "==", subjectId),
-          where("isActive", "==", true),
-          orderBy("order", "asc")
+          where("isActive", "==", true)
         );
         const snap = await getDocs(q);
-        const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Topic));
+        const data = snap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Topic))
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
 
         if (data.length > 0) {
           setTopics(data);
