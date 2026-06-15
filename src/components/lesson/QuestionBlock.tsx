@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SpeechButton } from "../ui/SpeechButton";
 
 interface QuestionBlockProps {
   question: string;
@@ -33,9 +34,14 @@ export function QuestionBlock({
     onAnswer(selected === correctIndex);
   };
 
+  const textToRead = `${question}. Options: ${options.map((opt, i) => `${String.fromCharCode(65 + i)}: ${opt}`).join('. ')}. ${submitted ? `Explanation: ${explanation}` : ''}`;
+
   return (
-    <div className="mb-8 p-6 bg-card border rounded-2xl shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <h4 className="text-lg font-bold mb-6 leading-tight">{question}</h4>
+    <div className="mb-8 p-6 bg-card border rounded-2xl shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 group relative">
+      <div className="flex justify-between items-start gap-4 mb-6">
+        <h4 className="text-lg font-bold leading-tight">{question}</h4>
+        <SpeechButton text={textToRead} className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
 
       <div className="space-y-3 mb-6">
         {options.map((option, index) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SpeechButton } from "../ui/SpeechButton";
 
 interface WorkedExampleBlockProps {
   problem: string;
@@ -20,11 +21,18 @@ export function WorkedExampleBlock({ problem, steps, answer }: WorkedExampleBloc
     }
   };
 
+  const currentTextToRead = showAnswer
+    ? `${problem}. ${steps.join('. ')}. Final answer: ${answer}`
+    : `${problem}. ${steps.slice(0, visibleStepCount).join('. ')}`;
+
   return (
-    <div className="mb-8 border rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-muted/50 p-6 border-b">
-        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">Worked Example</span>
-        <h4 className="text-lg font-bold leading-tight">{problem}</h4>
+    <div className="mb-8 border rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 group relative">
+      <div className="bg-muted/50 p-6 border-b flex justify-between items-start gap-4">
+        <div className="flex-1">
+          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">Worked Example</span>
+          <h4 className="text-lg font-bold leading-tight">{problem}</h4>
+        </div>
+        <SpeechButton text={currentTextToRead} className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
       <div className="p-6 space-y-4 bg-card">
