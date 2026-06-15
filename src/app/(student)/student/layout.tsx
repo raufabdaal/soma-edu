@@ -27,8 +27,13 @@ export default function StudentLayout({
         return;
       }
 
-      if (!userProfile) return;
-
+      // Wait until both user and userProfile are loaded.
+      // If user exists but userProfile is still null, we are still loading the profile from Firestore.
+      if (!userProfile) {
+        console.log("[StudentLayout] User exists but userProfile is not loaded yet.");
+        return;
+      }
+      
       if (userProfile.role !== "student") {
         router.replace("/");
         return;

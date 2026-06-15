@@ -23,16 +23,16 @@ export default function ParentLayout({
       return;
     }
 
-    // Only set accessChecked once userProfile is confirmed
-    if (userProfile) {
-      if (userProfile.role !== "parent") {
-        router.replace("/");
-      } else {
-        setAccessChecked(true);
-      }
+    // If user is authenticated but userProfile is still null, wait for onAuthStateChanged to load the profile from Firestore.
+    if (!userProfile) {
+      console.log("[ParentLayout] User exists but userProfile is not loaded yet.");
+      return;
+    }
+
+    if (userProfile.role !== "parent") {
+      router.replace("/");
     } else {
-      console.warn("[ParentLayout] No profile found for authenticated user.");
-      router.replace("/login");
+      setAccessChecked(true);
     }
   }, [user, userProfile, loading, router]);
 
