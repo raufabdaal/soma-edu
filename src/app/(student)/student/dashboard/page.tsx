@@ -3,6 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
+import { Copy, Check } from "lucide-react";
 import { db } from "@/lib/firebase/config";
 import Link from "next/link";
 import { Student } from "@/types";
@@ -21,6 +22,15 @@ export default function StudentDashboard() {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [subjects, setSubjects] = useState<SubjectWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = () => {
+    if (studentData?.studyCode) {
+      navigator.clipboard.writeText(studentData.studyCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,6 +130,18 @@ export default function StudentDashboard() {
                 <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
                   <span className="opacity-60">Code:</span>
                   <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
+                  <button
+                    onClick={handleCopyCode}
+                    className="ml-1 p-1 hover:bg-slate-200 rounded-md transition-colors text-slate-400 hover:text-indigo-600"
+                    aria-label="Copy study code"
+                    title="Copy study code"
+                  >
+                    {copied ? (
+                      <Check className="w-3 h-3 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3 h-3" />
+                    )}
+                  </button>
                 </div>
               )}
             </div>
