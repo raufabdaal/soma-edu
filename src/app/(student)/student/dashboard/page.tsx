@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import Link from "next/link";
 import { Student } from "@/types";
+import { Copy, Check } from "lucide-react";
 
 interface SubjectWithProgress {
   id: string;
@@ -21,6 +22,7 @@ export default function StudentDashboard() {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [subjects, setSubjects] = useState<SubjectWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,6 +83,18 @@ export default function StudentDashboard() {
     fetchData();
   }, [user]);
 
+  const handleCopyCode = () => {
+    if (!studentData?.studyCode) return;
+    navigator.clipboard.writeText(studentData.studyCode)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch((err) => {
+        console.error("Failed to copy study code:", err);
+      });
+  };
+
   if (loading) {
     return <div className="p-8 text-center">Loading your dashboard...</div>;
   }
@@ -117,9 +131,21 @@ export default function StudentDashboard() {
                 Student Profile
               </span>
               {studentData?.studyCode && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-1.5 pl-3 pr-1 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
                   <span className="opacity-60">Code:</span>
                   <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
+                  <button
+                    onClick={handleCopyCode}
+                    className="ml-1 p-1 hover:bg-slate-200 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                    aria-label="Copy study code"
+                    title="Copy study code"
+                  >
+                    {copied ? (
+                      <Check className="w-3 h-3 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3 h-3 text-slate-400" />
+                    )}
+                  </button>
                 </div>
               )}
             </div>
