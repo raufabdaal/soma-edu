@@ -1,11 +1,12 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import Link from "next/link";
 import { Student } from "@/types";
+import { Copy, Check } from "lucide-react";
 
 interface SubjectWithProgress {
   id: string;
@@ -21,6 +22,16 @@ export default function StudentDashboard() {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [subjects, setSubjects] = useState<SubjectWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = useCallback(() => {
+    if (studentData?.studyCode) {
+      navigator.clipboard.writeText(studentData.studyCode).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
+  }, [studentData?.studyCode]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,10 +128,25 @@ export default function StudentDashboard() {
                 Student Profile
               </span>
               {studentData?.studyCode && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
+                <button
+                  onClick={handleCopyCode}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.98] group/copy relative focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+                  aria-label={`Copy study code: ${studentData.studyCode}`}
+                  title="Copy Study Code"
+                >
                   <span className="opacity-60">Code:</span>
                   <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
-                </div>
+                  <div className="ml-1 text-slate-400 group-hover/copy:text-slate-600 transition-colors">
+                    {copied ? (
+                      <Check className="w-3 h-3 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3 h-3" />
+                    )}
+                  </div>
+                  <span className="sr-only" aria-live="polite">
+                    {copied ? "Code copied to clipboard" : ""}
+                  </span>
+                </button>
               )}
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">
