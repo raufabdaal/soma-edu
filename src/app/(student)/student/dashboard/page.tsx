@@ -21,6 +21,17 @@ export default function StudentDashboard() {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [subjects, setSubjects] = useState<SubjectWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = (code: string) => {
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(err => {
+      console.error("Failed to copy code: ", err);
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,10 +128,25 @@ export default function StudentDashboard() {
                 Student Profile
               </span>
               {studentData?.studyCode && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
+                <button
+                  onClick={() => handleCopyCode(studentData.studyCode)}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  title="Click to copy study code"
+                  aria-label={`Copy study code: ${studentData.studyCode}`}
+                >
                   <span className="opacity-60">Code:</span>
                   <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
-                </div>
+                  {copied ? (
+                    <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" strokeWidth="3" fill="none" className="text-emerald-600">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" strokeWidth="2" fill="none" className="opacity-40">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  )}
+                </button>
               )}
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">
