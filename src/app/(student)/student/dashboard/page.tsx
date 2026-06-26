@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import Link from "next/link";
@@ -21,6 +21,23 @@ export default function StudentDashboard() {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [subjects, setSubjects] = useState<SubjectWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleCopyCode = () => {
+    if (!studentData?.studyCode) return;
+    navigator.clipboard.writeText(studentData.studyCode).then(() => {
+      setCopied(true);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,9 +134,27 @@ export default function StudentDashboard() {
                 Student Profile
               </span>
               {studentData?.studyCode && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
-                  <span className="opacity-60">Code:</span>
-                  <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
+                    <span className="opacity-60">Code:</span>
+                    <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
+                  </div>
+                  <button
+                    onClick={handleCopyCode}
+                    aria-label="Copy study code"
+                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-indigo-600 transition-colors active:scale-90"
+                  >
+                    {copied ? (
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="3" fill="none">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="3" fill="none">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
