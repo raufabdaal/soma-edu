@@ -347,13 +347,19 @@ export default function ParentDashboard() {
             <form onSubmit={handleLinkStudent} className="space-y-6">
               <div className="space-y-2">
                 <input
+                  id="study-code"
                   value={studyCode}
                   onChange={(e) => setStudyCode(e.target.value)}
                   placeholder="ABC-123"
                   className="w-full h-16 rounded-2xl border border-slate-100 bg-slate-50/50 text-center font-mono text-2xl font-black tracking-widest focus:border-indigo-500 focus:bg-white focus:outline-none transition-all text-slate-800"
                   maxLength={7}
                 />
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Study Code</p>
+                <label
+                  htmlFor="study-code"
+                  className="block text-[10px] font-black uppercase tracking-widest text-slate-400"
+                >
+                  Study Code
+                </label>
               </div>
               {error && (
                 <p className="text-sm font-bold text-red-600 bg-red-50 py-2.5 rounded-xl border border-red-100/50">
