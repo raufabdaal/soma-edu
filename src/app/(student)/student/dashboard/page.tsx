@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import Link from "next/link";
@@ -21,6 +21,22 @@ export default function StudentDashboard() {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [subjects, setSubjects] = useState<SubjectWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,9 +133,26 @@ export default function StudentDashboard() {
                 Student Profile
               </span>
               {studentData?.studyCode && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200/40 text-[10px] font-black uppercase tracking-widest relative group">
                   <span className="opacity-60">Code:</span>
                   <span className="text-slate-800 font-bold">{studentData.studyCode}</span>
+                  <button
+                    onClick={() => handleCopyCode(studentData.studyCode)}
+                    className="ml-1 p-1 hover:bg-slate-200 rounded transition-colors"
+                    aria-label="Copy study code"
+                    title={copied ? "Copied!" : "Copy code"}
+                  >
+                    {copied ? (
+                      <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" strokeWidth="3" fill="none" className="text-emerald-600">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" strokeWidth="3" fill="none" className="text-slate-400 group-hover:text-indigo-600">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
@@ -133,8 +166,15 @@ export default function StudentDashboard() {
 
           {/* Daily Goal Status Banner */}
           <div className="bg-white border border-slate-100 p-5 rounded-[24px] flex items-center gap-4 shadow-[0_10px_30px_rgba(0,0,0,0.02)] min-w-[280px]">
-            <div className="relative w-12 h-12 flex items-center justify-center">
-              <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+            <div
+              className="relative w-12 h-12 flex items-center justify-center"
+              role="progressbar"
+              aria-valuenow={2}
+              aria-valuemin={0}
+              aria-valuemax={5}
+              aria-label="Daily Study Goal"
+            >
+              <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
                 <path className="text-slate-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                 <path className="text-indigo-600" strokeDasharray="40, 100" strokeWidth="3" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
               </svg>
@@ -189,7 +229,14 @@ export default function StudentDashboard() {
             </div>
 
             <div className="space-y-4 relative z-10 mt-6">
-              <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="w-full h-3 bg-white/10 rounded-full overflow-hidden"
+                role="progressbar"
+                aria-valuenow={guaranteeProgress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Secure Score Guarantee Progress"
+              >
                 <div
                   className="h-full bg-indigo-500 rounded-full transition-all duration-1000"
                   style={{ width: `${guaranteeProgress}%` }}
@@ -232,7 +279,14 @@ export default function StudentDashboard() {
                       <span>Syllabus Covered</span>
                       <span className="text-slate-700">{subject.progress}%</span>
                     </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="w-full h-2 bg-slate-100 rounded-full overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={subject.progress}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${subject.name} Syllabus Progress`}
+                    >
                       <div
                         className="h-full rounded-full transition-all duration-1000"
                         style={{ width: `${subject.progress}%`, backgroundColor: subject.color }}
